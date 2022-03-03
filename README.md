@@ -40,10 +40,11 @@ html
 
 ```
 $ Docker container exec -ti {ID Container} ls /usr/share/nginx/html
-```
+
     50x.html  index.html
     50x.html  index.html
 ```    
+
 ###   - Acessar o container 
 ```
 $ docker container exec -ti {ID Container} bash
