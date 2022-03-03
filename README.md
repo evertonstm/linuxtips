@@ -1,75 +1,111 @@
 # Fundamentos
-
+```
 $ docker container run -ti {ubuntu}
+
+```
   - Para sair do container sem parar o entrepoint que no caso ubuntu o entrepoint e o bash
   - ctrl + p + q
 
 ###  - Para voltar para container novamente 
+```
 $ docker container attach {ID image or name}
+```
 
 ### - O entrepoint do nginx e o proprio processo
+```
 $docker container run -it nginx
+```
  
 ###  - Rodar o container como dimon 
+```
 $ docker container run -d nginx
+```
 
 ###  - Tbm vai rodar no entrepoint
+```
 $ docker container attach {ID Container}
-
+```
+```
 $ docker container exec -ti {ID Container} ls
-``` 
 bin   docker-entrypoint.d   home   media  proc	sbin  tmp
 boot  docker-entrypoint.sh  lib    mnt	  root	srv   usr
 dev   etc		    lib64  opt	  run	sys   var
 ```
-$ docker container exec -ti {ID Container} ls /usr/share/nginx/
+$ Docker container exec -ti {ID Container} ls /usr/share/nginx/
 ```
 html
 ```
-$ docker container exec -ti {ID Container} ls /usr/share/nginx/html
+$ Docker container exec -ti {ID Container} ls /usr/share/nginx/html
 ```
     50x.html  index.html
     50x.html  index.html
 ```    
 ###   - Acessar o container 
+```
 $ docker container exec -ti {ID Container} bash
-
+```
+```
 $ docker container stop {container}
-
+```
+```
 $ docker container start {container}
-
+```
+```
 $ docker container restart {container}
-
+```
+```
 $ docker container inspect {container}
-
+```
+```
 $ docker container pause {container}  
-
+```
+```
 $ docker container unpause {container}
-
+```
+```
 $ docker container logs -f {container}
-
+```
+```
 $ docker container run -d nginx 
+```
 ###  - Mostra tudo que o container esta usando de recurso 
+```
 $ docker container stats {container}
-
+```
+```
 $ docker container top {container}
-### - criar container com limite de 128M de memoria
+```
+### - Criar container com limite de 128M de memoria
+```
 $ docker container run -d -m 128M nginx
-###  - cria container com 128 de memoria e 1/2 CPU
+```
+###  - Cria container com 128 de memoria e 1/2 CPU
+```
 $ docker container run -d -m 128M --cpus 0.5 nginx
-
+```
+```
 $ docker container inspect {container}
-### - update atualiza um contaner ligado nesse caso 20% de 1 Core
+```
+### - Update atualiza um contaner ligado nesse caso 20% de 1 Core
+```
 $ docker container update --cpus 0.2 {container}
-### - update atualiza um contaner ligado nesse caso 80% de 1 Core
-
+```
+### - Update atualiza um contaner ligado nesse caso 80% de 1 Core
+```
 $ docker container update --cpus 0.8% {container} 
-### - limitando em 50% de 1 core e 64M de memoria
+```
+### - Limitando em 50% de 1 core e 64M de memoria
+```
 $ docker container update --cpus 0.5 --memory 64M b76e4
-###  - remove um container, -f força a remoção de container ligado
-$ docker container rm -f {container}
+```
+###  - Remove um container, -f força a remoção de container ligado
+```
+$ Docker container rm -f {container}
+```
 ###  - Mostrar as imagens local
+```
 $ docker image ls
+```
 
 # DockerFile
 
@@ -85,8 +121,10 @@ $ docker image ls
   CMD stress --cpu 1 --vm-bytes 64M --vm 1
 ```
 ### (Criando a IMG)
-$ docker image build -t toskeira:1.0 .  
 ```
+
+$ docker image build -t toskeira:1.0 .  
+
       Sending build context to Docker daemon  2.048kB
       Step 1/5 : FROM debian
       latest: Pulling from library/debian
@@ -137,59 +175,71 @@ $ docker image build -t toskeira:1.0 .
       Successfully built 0fcffdebec90
       Successfully tagged toskeira:1.0
 ```
-
+```
 $ docker image ls
-
+```
+```
 $ docker container run -d toskeira:1.0
-
+```
+```
 $ docker container ls
-###    nesse caso o logs mostro o stress comando executado pelo CMD no dockerfile
+```
+###    Nesse caso o logs mostro o stress comando executado pelo CMD no dockerfile
+```
 $ docker container logs -f {ID}
+```
 
+```
 $ docker container stats {ID}
-
+```
 
 
 # Dia 2: (VOLUMES)
 
 ### Vamos criar um diretorio dentro do /opt
+```
 $ sudo mkdir /opt/giropops
+```
 ### Volume do tipo Bind
 
 ### Vai montar no diretorio /opt/giropops com destino ao diretorio na raiz do sistema do container /giropops
+```
 $ docker container run -it --mount type=bind,src=/opt/giropops,dst=/giropops debian
 
 root@916d2c869731:/# ls
-```
+
 bin   dev  giropops  lib    media  opt	 root  sbin  sys  usr
 boot  etc  home      lib64  mnt    proc  run   srv   tmp  var
-```
+
 
 root@916d2c869731:/# cd giropops/
 
 root@916d2c869731:/giropops# echo > teste.txt
 
 root@916d2c869731:/giropops# ls
-```
-teste.txt
-```
-root@916d2c869731:/giropops# exit
 
-$ /opt/giropops$ ls
+teste.txt
+
+root@916d2c869731:/giropops# exit
 ```
+```
+$ /opt/giropops$ ls
+
 teste.txt
 ```
 ### Outro container dados persiste no volume criado. 
+```
 $ docker container run -it --mount type=bind,src=/opt/giropops,dst=/giropops debian 
 
+
 $ root@265ea222ba35:/giropops# ls
-```
+
 teste.txt
-```
+
 root@265ea222ba35:/giropops# touch teste1.txt
 
 root@265ea222ba35 :/# df -h
-```
+
 Filesystem      Size  Used Avail Use% Mounted on
 overlay          34G   15G   18G  46% /
 tmpfs            64M     0   64M   0% /dev
@@ -202,20 +252,20 @@ tmpfs           3.9G     0  3.9G   0% /proc/scsi
 tmpfs           3.9G     0  3.9G   0% /sys/firmware
 ```
 ### Read only (Somente Leitura)
+```
 $ docker container run -it --mount type=bind,src=/opt/giropops,dst=/giropops,ro debian
 root@b742436810e6:/# ls
-```
+
     bin   dev  giropops  lib    media  opt	 root  sbin  sys  usr
     boot  etc  home      lib64  mnt    proc  run   srv   tmp  var
-```    
+    
 root@b742436810e6:/# cd giropops/
 
 root@b742436810e6:/giropops# ls
-```
+
 teste.txt  teste1.txt
-```
+
 root@b742436810e6:/giropops# rm teste.txt 
-```
 rm: cannot remove 'teste.txt': Read-only file system
 ```
 ### Subcomando docker volume
@@ -224,10 +274,12 @@ $ docker volume create giropops
 ```
 giropops
 ```
-$ docker volume ls
 ```
+$ docker volume ls
+
 DRIVER    VOLUME NAME
 local     giropops
+```
 ```
 $ docker volume inspect giropops
 ```
@@ -248,43 +300,119 @@ $ docker volume inspect giropops
 giropops  metadata.db
 ### cd /var/lib/docker/volumes/giropops/_data
 
+```
 $ docker container run -it --mount type=volume,src=giropops,dst=/giropops debian 
 
 root@d378ad153293:/# ls
-```
+
 bin   dev  giropops  lib    media  opt	 root  sbin  sys  usr
 boot  etc  home      lib64  mnt    proc  run   srv   tmp  var
-```
+
 root@d378ad153293:/# cd giropops/
 
 root@d378ad153293:/giropops# ls
 teste  teste2
-
+```
 ### Arquivos criando anteriormente dentro do diretorio /var/lib/docker/volumes/giropops, no docker.
 
 ###  Sair sem matar o container ctrl+p+q
 ###  tentando remover o container 
-$ docker volume rm giropops 
+
 ```
+$ docker volume rm giropops 
+
  Error response from daemon: remove giropops: volume is in use - [d378ad153293e88e5b72103a2faf28d9887f4878bd97326f97583f5cee1ac6c7, 55e72fa7b85d7cc364eaaa184ae11bf9cf431b2203e54ff1adb3db0b9d9b6bbe]
  ```
 ### Para remover o volume e necessário remover os container vinculado a esse volume 
-$ docker container ls -a
-
-$ docker volume rm giropops
 ```
+$ docker container ls -a
+```
+
+```
+$ docker volume rm giropops
 giropops
-
+```
 ### (cuidado)remover volume que nao esta sendo utilizado
+```
 $ docker volume prune
+WARNING! This will remove all local volumes not used by at least one container.
+Are you sure you want to continue? [y/N] y
 
+```
 ###  Remove container que não estão sendo utilizado. 
+```
 $ docker containe prune
+```
 
 ### Remove as images que não estão sendo utilizado. 
+```
+
 $ docker image prune
-
-
+```
 ### somente criar o container com comando antigo.
-(old) $ docker container create -v /opt/giropops/:/giropops --name dbdados centos
+```
+$ docker volume create dbdados
+```
+```
+docker volume ls
+```
+### (old) $ docker container create -v /opt/giropops/:/giropops --name dbdados centos
+
+```
 $ docker container ls -a
+```
+
+### Criando Banco POSTGRESQL (sistaxe antiga)
+```
+$ docker run -d -p 5432:5432 --name pgsql1 --volumes-from dbdados -e POSTGRESQL_USER=docker -e POSTGRESQL_PASS=docker -e POSTGRESQL_DB=docker kamui/postgresql
+```
+porta: -p 5432:5432 (localhost/container)
+nome: do container (--name pgsql1)
+Volume: --volumes-from dbdados (montar nesse volume)
+environment: -e (variavel de ambiente "-e POSTGRESQL_USER=docker -e POSTGRESQL_PASS=docker -e POSTGRESQL_DB=docker") 
+imagem: kamui/postgresql
+
+### Localizando o mounts 
+```
+$ docker inspect {ID}
+/var/lib/docker/volumes/63a575c6c1b3556115f6c4ce038e4fdb2338bc1b2bf3fa4427c25d1a892f59c2/_data
+```
+
+### Cenário criando o volume.
+```
+$ docker volume create dbdados
+```
+
+```
+$ docker volume ls
+DRIVER    VOLUME NAME
+local     dbdados
+```
+
+### criando 2 bancos compartilhando mesmo volume
+
+$ docker run -d -p 5432:5432 --name pgsql1  --mount type=volume,src=dbdados,dst=/data -e POSTGRESQL_USER=docker -e POSTGRESQL_PASS=docker -e POSTGRESQL_DB=docker kamui/postgresql
+
+$ docker run -d -p 5433:5432 --name pgsql2  --mount type=volume,src=dbdados,dst=/data -e POSTGRESQL_USER=docker -e POSTGRESQL_PASS=docker -e POSTGRESQL_DB=docker kamui/postgresql
+
+```
+$ docker inspect dbdados
+[
+    {
+        "CreatedAt": "2022-03-03T17:35:14-04:00",
+        "Driver": "local",
+        "Labels": {},
+        "Mountpoint": "/var/lib/docker/volumes/dbdados/_data",
+        "Name": "dbdados",
+        "Options": {},
+        "Scope": "local"
+    }
+]
+```
+```
+ #/var/lib/docker/volumes/dbdados/_data# ls
+base         pg_ident.conf  pg_snapshots  pg_tblspc    postgresql.conf  server.key
+global       pg_multixact   pg_stat       pg_twophase  postmaster.opts
+pg_clog      pg_notify      pg_stat_tmp   PG_VERSION   postmaster.pid
+pg_hba.conf  pg_serial      pg_subtrans   pg_xlog      server.crt
+```
