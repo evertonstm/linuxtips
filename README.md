@@ -76,8 +76,7 @@ $ docker container rm -f {container}
 $ docker image ls
   - Mostrar as imagens local
 
-
-#####DockerFile
+### DockerFile
 
 criar um arquivo dentro de um diretorio nome dockerfile
   FROM debian
@@ -152,3 +151,115 @@ $ docker container logs -f {ID}
     nesse caso o logs mostro o stress comando executado pelo CMD no dockerfile
 
 $ docker container stats {ID}
+
+
+### Dia 2 VOLUME
+
+vamos criar um diretorio dentro do /opt
+$ sudo mkdir /opt/giropops
+
+Volume do tipo Bind
+$ docker container run -it --mount type=bind,src=/opt/giropops,dst=/giropops debian
+    Vai montar no diretorio /opt/giropops com destino ao diretorio na raiz do sistema do container /giropops
+
+root@916d2c869731:/# ls
+bin   dev  giropops  lib    media  opt	 root  sbin  sys  usr
+boot  etc  home      lib64  mnt    proc  run   srv   tmp  var
+
+root@916d2c869731:/# cd giropops/
+root@916d2c869731:/giropops# echo > teste.txt
+root@916d2c869731:/giropops# ls
+teste.txt
+root@916d2c869731:/giropops# exit
+
+$ /opt/giropops$ ls
+teste.txt
+
+outro container dados persiste no volume criado. 
+$ docker container run -it --mount type=bind,src=/opt/giropops,dst=/giropops debian 
+root@265ea222ba35:/giropops# ls
+teste.txt
+root@265ea222ba35:/giropops# touch teste1.txt
+
+root@265ea222ba35 :/# df -h
+Filesystem      Size  Used Avail Use% Mounted on
+overlay          34G   15G   18G  46% /
+tmpfs            64M     0   64M   0% /dev
+tmpfs           3.9G     0  3.9G   0% /sys/fs/cgroup
+shm              64M     0   64M   0% /dev/shm
+/dev/sda3        34G   15G   18G  46% /giropops
+tmpfs           3.9G     0  3.9G   0% /proc/asound
+tmpfs           3.9G     0  3.9G   0% /proc/acpi
+tmpfs           3.9G     0  3.9G   0% /proc/scsi
+tmpfs           3.9G     0  3.9G   0% /sys/firmware
+
+
+Read only (Somente Leitura)
+$ docker container run -it --mount type=bind,src=/opt/giropops,dst=/giropops,ro debian
+    root@b742436810e6:/# ls
+    bin   dev  giropops  lib    media  opt	 root  sbin  sys  usr
+    boot  etc  home      lib64  mnt    proc  run   srv   tmp  var
+    root@b742436810e6:/# cd giropops/
+    root@b742436810e6:/giropops# ls
+    teste.txt  teste1.txt
+    root@b742436810e6:/giropops# rm teste.txt 
+    rm: cannot remove 'teste.txt': Read-only file system
+
+
+Subcomando docker volume
+
+$ docker volume create giropops
+giropops
+
+$ docker volume ls
+DRIVER    VOLUME NAME
+local     giropops
+
+$ docker volume inspect giropops
+[
+    {
+        "CreatedAt": "2022-03-02T14:56:09-04:00",
+        "Driver": "local",
+        "Labels": {},
+        "Mountpoint": "/var/lib/docker/volumes/giropops/_data",
+        "Name": "giropops",
+        "Options": {},
+        "Scope": "local"
+    }
+]
+# cd /var/lib/docker/volumes
+# ls
+giropops  metadata.db
+# cd /var/lib/docker/volumes/giropops/_data
+
+$ docker container run -it --mount type=volume,src=giropops,dst=/giropops debian 
+root@d378ad153293:/# ls
+bin   dev  giropops  lib    media  opt	 root  sbin  sys  usr
+boot  etc  home      lib64  mnt    proc  run   srv   tmp  var
+root@d378ad153293:/# cd giropops/
+root@d378ad153293:/giropops# ls
+teste  teste2
+ 
+Arquivos criando anteriormente dentro do diretorio /var/lib/docker/volumes/giropops, no docker.
+
+** sair sem matar o container ctrl+p+q
+
+** tentando remover o container 
+$ docker volume rm giropops 
+Error response from daemon: remove giropops: volume is in use - [d378ad153293e88e5b72103a2faf28d9887f4878bd97326f97583f5cee1ac6c7, 55e72fa7b85d7cc364eaaa184ae11bf9cf431b2203e54ff1adb3db0b9d9b6bbe]
+ 
+
+para remover o volume e necessário remover os container vinculado a esse volume 
+$ docker container ls -a
+
+$ docker volume rm giropops
+giropops
+
+(cuidado)remover volume que nao esta sendo utilizado
+$ docker volume prune
+
+Remove container que não estão sendo utilizado. 
+$ docker containe prune
+
+Remove as images que não estão sendo utilizado. 
+$ docker image prune
