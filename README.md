@@ -1,4 +1,4 @@
-# Fundamentos
+# Fundamentos docker 
 ```
 $ docker container run -ti {ubuntu}
 
@@ -25,15 +25,19 @@ $ docker container run -d nginx
 ```
 $ docker container attach {ID Container}
 ```
+
 ```
 $ docker container exec -ti {ID Container} ls
 bin   docker-entrypoint.d   home   media  proc	sbin  tmp
 boot  docker-entrypoint.sh  lib    mnt	  root	srv   usr
 dev   etc		    lib64  opt	  run	sys   var
 ```
-$ Docker container exec -ti {ID Container} ls /usr/share/nginx/
 ```
+$ Docker container exec -ti {ID Container} ls /usr/share/nginx/
+
 html
+```
+
 ```
 $ Docker container exec -ti {ID Container} ls /usr/share/nginx/html
 ```
