@@ -1,19 +1,19 @@
-### Fundamentos
+# Fundamentos
 
 $ docker container run -ti {ubuntu}
   - Para sair do container sem parar o entrepoint que no caso ubuntu o entrepoint e o bash
   - ctrl + p + q
 
-#  - Para voltar para container novamente 
+###  - Para voltar para container novamente 
 $ docker container attach {ID image or name}
 
-# - O entrepoint do nginx e o proprio processo
+### - O entrepoint do nginx e o proprio processo
 $docker container run -it nginx
  
-#  - Rodar o container como dimon 
+###  - Rodar o container como dimon 
 $ docker container run -d nginx
 
-#  - Tbm vai rodar no entrepoint
+###  - Tbm vai rodar no entrepoint
 $ docker container attach {ID Container}
 
 $ docker container exec -ti {ID Container} ls
@@ -31,7 +31,7 @@ $ docker container exec -ti {ID Container} ls /usr/share/nginx/html
     50x.html  index.html
     50x.html  index.html
 ```    
-#   - Acessar o container 
+###   - Acessar o container 
 $ docker container exec -ti {ID Container} bash
 
 $ docker container stop {container}
@@ -49,31 +49,31 @@ $ docker container unpause {container}
 $ docker container logs -f {container}
 
 $ docker container run -d nginx 
-#  - Mostra tudo que o container esta usando de recurso 
+###  - Mostra tudo que o container esta usando de recurso 
 $ docker container stats {container}
 
 $ docker container top {container}
-# - criar container com limite de 128M de memoria
+### - criar container com limite de 128M de memoria
 $ docker container run -d -m 128M nginx
-#  - cria container com 128 de memoria e 1/2 CPU
+###  - cria container com 128 de memoria e 1/2 CPU
 $ docker container run -d -m 128M --cpus 0.5 nginx
 
 $ docker container inspect {container}
-# - update atualiza um contaner ligado nesse caso 20% de 1 Core
+### - update atualiza um contaner ligado nesse caso 20% de 1 Core
 $ docker container update --cpus 0.2 {container}
-# - update atualiza um contaner ligado nesse caso 80% de 1 Core
+### - update atualiza um contaner ligado nesse caso 80% de 1 Core
 
 $ docker container update --cpus 0.8% {container} 
-# - limitando em 50% de 1 core e 64M de memoria
+### - limitando em 50% de 1 core e 64M de memoria
 $ docker container update --cpus 0.5 --memory 64M b76e4
-#  - remove um container, -f força a remoção de container ligado
+###  - remove um container, -f força a remoção de container ligado
 $ docker container rm -f {container}
-#  - Mostrar as imagens local
+###  - Mostrar as imagens local
 $ docker image ls
 
-# ### DockerFile
+# DockerFile
 
-# Criar um arquivo dentro de um diretorio nome dockerfile
+### Criar um arquivo dentro de um diretorio nome dockerfile
 ```
   FROM debian
 
@@ -84,7 +84,7 @@ $ docker image ls
 
   CMD stress --cpu 1 --vm-bytes 64M --vm 1
 ```
-# (Criando a IMG)
+### (Criando a IMG)
 $ docker image build -t toskeira:1.0 .  
 ```
       Sending build context to Docker daemon  2.048kB
@@ -143,20 +143,21 @@ $ docker image ls
 $ docker container run -d toskeira:1.0
 
 $ docker container ls
-#    nesse caso o logs mostro o stress comando executado pelo CMD no dockerfile
+###    nesse caso o logs mostro o stress comando executado pelo CMD no dockerfile
 $ docker container logs -f {ID}
 
 $ docker container stats {ID}
 
 
 
-# #### Dia 2: (VOLUMES)
+# Dia 2: (VOLUMES)
 
-# Vamos criar um diretorio dentro do /opt
+### Vamos criar um diretorio dentro do /opt
 $ sudo mkdir /opt/giropops
-# Volume do tipo Bind
+### Volume do tipo Bind
+
+### Vai montar no diretorio /opt/giropops com destino ao diretorio na raiz do sistema do container /giropops
 $ docker container run -it --mount type=bind,src=/opt/giropops,dst=/giropops debian
-    Vai montar no diretorio /opt/giropops com destino ao diretorio na raiz do sistema do container /giropops
 
 root@916d2c869731:/# ls
 ```
@@ -178,7 +179,7 @@ $ /opt/giropops$ ls
 ```
 teste.txt
 ```
-# Outro container dados persiste no volume criado. 
+### Outro container dados persiste no volume criado. 
 $ docker container run -it --mount type=bind,src=/opt/giropops,dst=/giropops debian 
 
 $ root@265ea222ba35:/giropops# ls
@@ -200,7 +201,7 @@ tmpfs           3.9G     0  3.9G   0% /proc/acpi
 tmpfs           3.9G     0  3.9G   0% /proc/scsi
 tmpfs           3.9G     0  3.9G   0% /sys/firmware
 ```
-# Read only (Somente Leitura)
+### Read only (Somente Leitura)
 $ docker container run -it --mount type=bind,src=/opt/giropops,dst=/giropops,ro debian
 root@b742436810e6:/# ls
 ```
@@ -217,7 +218,7 @@ root@b742436810e6:/giropops# rm teste.txt
 ```
 rm: cannot remove 'teste.txt': Read-only file system
 ```
-# Subcomando docker volume
+### Subcomando docker volume
 
 $ docker volume create giropops
 ```
@@ -242,10 +243,10 @@ $ docker volume inspect giropops
     }
 ]
 ```
-# cd /var/lib/docker/volumes
-# ls
+### cd /var/lib/docker/volumes
+### ls
 giropops  metadata.db
-# cd /var/lib/docker/volumes/giropops/_data
+### cd /var/lib/docker/volumes/giropops/_data
 
 $ docker container run -it --mount type=volume,src=giropops,dst=/giropops debian 
 
@@ -259,31 +260,31 @@ root@d378ad153293:/# cd giropops/
 root@d378ad153293:/giropops# ls
 teste  teste2
 
-# Arquivos criando anteriormente dentro do diretorio /var/lib/docker/volumes/giropops, no docker.
+### Arquivos criando anteriormente dentro do diretorio /var/lib/docker/volumes/giropops, no docker.
 
-#  Sair sem matar o container ctrl+p+q
-#  tentando remover o container 
+###  Sair sem matar o container ctrl+p+q
+###  tentando remover o container 
 $ docker volume rm giropops 
 ```
  Error response from daemon: remove giropops: volume is in use - [d378ad153293e88e5b72103a2faf28d9887f4878bd97326f97583f5cee1ac6c7, 55e72fa7b85d7cc364eaaa184ae11bf9cf431b2203e54ff1adb3db0b9d9b6bbe]
  ```
-# Para remover o volume e necessário remover os container vinculado a esse volume 
+### Para remover o volume e necessário remover os container vinculado a esse volume 
 $ docker container ls -a
 
 $ docker volume rm giropops
 ```
 giropops
-```
-# (cuidado)remover volume que nao esta sendo utilizado
+
+### (cuidado)remover volume que nao esta sendo utilizado
 $ docker volume prune
 
-#  Remove container que não estão sendo utilizado. 
+###  Remove container que não estão sendo utilizado. 
 $ docker containe prune
 
-# Remove as images que não estão sendo utilizado. 
+### Remove as images que não estão sendo utilizado. 
 $ docker image prune
 
 
-# somente criar o container com comando antigo.
+### somente criar o container com comando antigo.
 (old) $ docker container create -v /opt/giropops/:/giropops --name dbdados centos
 $ docker container ls -a
