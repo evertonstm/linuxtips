@@ -440,3 +440,20 @@ global       pg_multixact   pg_stat       pg_twophase  postmaster.opts
 pg_clog      pg_notify      pg_stat_tmp   PG_VERSION   postmaster.pid
 pg_hba.conf  pg_serial      pg_subtrans   pg_xlog      server.crt
 ```
+
+### Levantando um container para BKP de dados ex usado banco de dados
+```
+$ docker container run -ti --mount type=volume,src=dbdados,dst=/data --mount type=bind,src=/opt/backupDB,dst=/backup debian tar -cvf /backup/bkp-banco.tar /data
+```
+```
+ #/opt/backupDB# ls
+bkp-banco.tar
+```
+
+```
+/opt/backupDB$ sudo tar -xvf bkp-banco.tar
+```
+
+
+# Dia 2 Dockerfile
+
