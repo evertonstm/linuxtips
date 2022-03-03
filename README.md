@@ -274,11 +274,11 @@ root@b742436810e6:/giropops# rm teste.txt
 rm: cannot remove 'teste.txt': Read-only file system
 ```
 ### Subcomando docker volume
-
-$ docker volume create giropops
 ```
+$ docker volume create giropops
 giropops
 ```
+
 ```
 $ docker volume ls
 
@@ -287,7 +287,6 @@ local     giropops
 ```
 ```
 $ docker volume inspect giropops
-```
 [
     {
         "CreatedAt": "2022-03-02T14:56:09-04:00",
@@ -300,28 +299,38 @@ $ docker volume inspect giropops
     }
 ]
 ```
-### cd /var/lib/docker/volumes
-### ls
+```
+cd /var/lib/docker/volumes ls
 giropops  metadata.db
-### cd /var/lib/docker/volumes/giropops/_data
+```
+
+```
+cd /var/lib/docker/volumes/giropops/_data
+```
 
 ```
 $ docker container run -it --mount type=volume,src=giropops,dst=/giropops debian 
-
+```
+```
 root@d378ad153293:/# ls
-
 bin   dev  giropops  lib    media  opt	 root  sbin  sys  usr
 boot  etc  home      lib64  mnt    proc  run   srv   tmp  var
+```
 
+```
 root@d378ad153293:/# cd giropops/
+```
 
+```
 root@d378ad153293:/giropops# ls
 teste  teste2
 ```
+
 ### Arquivos criando anteriormente dentro do diretorio /var/lib/docker/volumes/giropops, no docker.
 
 ###  Sair sem matar o container ctrl+p+q
 ###  tentando remover o container 
+
 
 ```
 $ docker volume rm giropops 
@@ -344,24 +353,31 @@ WARNING! This will remove all local volumes not used by at least one container.
 Are you sure you want to continue? [y/N] y
 
 ```
+
 ###  Remove container que não estão sendo utilizado. 
+
 ```
 $ docker containe prune
 ```
 
 ### Remove as images que não estão sendo utilizado. 
-```
 
+```
 $ docker image prune
 ```
 ### somente criar o container com comando antigo.
+
 ```
 $ docker volume create dbdados
 ```
 ```
-docker volume ls
+$ docker volume ls
 ```
-### (old) $ docker container create -v /opt/giropops/:/giropops --name dbdados centos
+
+### (old + Funciona)
+```
+$ docker container create -v /opt/giropops/:/giropops --name dbdados centos
+```
 
 ```
 $ docker container ls -a
@@ -371,11 +387,11 @@ $ docker container ls -a
 ```
 $ docker run -d -p 5432:5432 --name pgsql1 --volumes-from dbdados -e POSTGRESQL_USER=docker -e POSTGRESQL_PASS=docker -e POSTGRESQL_DB=docker kamui/postgresql
 ```
-porta: -p 5432:5432 (localhost/container)
-nome: do container (--name pgsql1)
-Volume: --volumes-from dbdados (montar nesse volume)
-environment: -e (variavel de ambiente "-e POSTGRESQL_USER=docker -e POSTGRESQL_PASS=docker -e POSTGRESQL_DB=docker") 
-imagem: kamui/postgresql
+ - porta: -p 5432:5432 (localhost/container)
+ - nome: do container (--name pgsql1)
+ - Volume: --volumes-from dbdados (montar nesse volume)
+ - environment: -e (variavel de ambiente "-e POSTGRESQL_USER=docker -e POSTGRESQL_PASS=docker -e POSTGRESQL_DB=docker") 
+ - imagem: kamui/postgresql
 
 ### Localizando o mounts 
 ```
@@ -394,12 +410,14 @@ DRIVER    VOLUME NAME
 local     dbdados
 ```
 
-### criando 2 bancos compartilhando mesmo volume
-
+### Criando 2 bancos compartilhando mesmo volume
+```
 $ docker run -d -p 5432:5432 --name pgsql1  --mount type=volume,src=dbdados,dst=/data -e POSTGRESQL_USER=docker -e POSTGRESQL_PASS=docker -e POSTGRESQL_DB=docker kamui/postgresql
-
+```
+```
 $ docker run -d -p 5433:5432 --name pgsql2  --mount type=volume,src=dbdados,dst=/data -e POSTGRESQL_USER=docker -e POSTGRESQL_PASS=docker -e POSTGRESQL_DB=docker kamui/postgresql
 
+```
 ```
 $ docker inspect dbdados
 [
@@ -414,6 +432,7 @@ $ docker inspect dbdados
     }
 ]
 ```
+
 ```
  #/var/lib/docker/volumes/dbdados/_data# ls
 base         pg_ident.conf  pg_snapshots  pg_tblspc    postgresql.conf  server.key
