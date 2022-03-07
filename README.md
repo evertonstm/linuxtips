@@ -454,9 +454,26 @@ bkp-banco.tar
 /opt/backupDB$ sudo tar -xvf bkp-banco.tar
 ```
 
+# Dia 2 Dockerfile (sepadando a evolução do arquivo Dockerfile por Dir)
+### DockerFile (dir 01)
+```
+FROM debian
 
-# Dia 2 Dockerfile
+RUN apt-get update && apt-get install -y apache2
+ENV APACHE_LOCK_DIR="/var/lock"
+ENV APACHE_PID_FILE="/var/run/apache2.pid"
+ENV APACHE_RUN_USER="www-data"
+ENV APACHE_RUN_GROUP="www-data"
+ENV APACHE_LOG_DIR="/var/log/apache2"
 
+LABEL description="Webserver"
+LABEL version="1.0.0"
+
+VOLUME /var/www/html/
+EXPOSE 80
+```
+### Adicionando Entrypoint, CMD. (dir 02)
+```
 FROM debian
 
 RUN apt-get update && apt-get install -y apache2
@@ -472,18 +489,285 @@ LABEL version="1.0.0"
 VOLUME /var/www/html/
 EXPOSE 80
 
-## Entrypoint processo para executa o apache em primeiro plano, principal processo do container, (modo exec)
-ENTRYPOINT [ "/usr/sbin/apachectl" ]
+# Entrypoint processo para executa o apache em primeiro plano, principal processo do container, (modo exec)
+ENTRYPOINT ["/usr/sbin/apachectl"]
 
-## CMD passa parametros, pro principal processo do container "/usr/sbin/apachectl" 
-CMD [ "-D","FORENGROUND" ]
+# CMD passa parametros, pro principal processo do container "/usr/sbin/apachectl" 
+CMD ["-D", "FOREGROUND"]
+```
+### Montando a IMG Build
 
 ```
 $ docker image build -t meu_apache:1.0 .
 ```
+### Para não utilizar cache que foi gerado no primeiro build. 
 ```
 $ docker image build -t meu_apache:2.0 . --no-cache
 ```
+### Gerando o container apontando a porta 80 do container para a porta 8080 no meu localhost. 
 ```
-$ docker run -d -p 8080:80 meu_apache:1.0 
+$ docker container run -d -p 8080:80 meu_apache:1.0 
+
+$ docker ps
+CONTAINER ID   IMAGE            COMMAND                  CREATED        STATUS        PORTS                                   NAMES
+7a41eb807307   meu_apache:1.0   "/usr/sbin/apachectl…"   25 hours ago   Up 25 hours   0.0.0.0:8080->80/tcp, :::8080->80/tcp   infallible_poitras
+
+$ curl localhost:8080
+(Mostrar a saida da pagina no apache)
+```
+#### Dockerfile COPY (dir 03)
+#### Criar o arquivo index.html na raiz do dockerfile (03/index.html)
+```
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Título do documento</title>
+</head>
+
+<body>
+  Docker APACHE TESTE
+</body>
+
+</html>
+```
+ ### (COPY index.html /var/www/html/), vai copiar o arquivo index.html para o diretório (/var/www/html/) dentro do container.
+```
+FROM debian
+
+RUN apt-get update && apt-get install -y apache2
+ENV APACHE_LOCK_DIR="/var/lock"
+ENV APACHE_PID_FILE="/var/run/apache2.pid"
+ENV APACHE_RUN_USER="www-data"
+ENV APACHE_RUN_GROUP="www-data"
+ENV APACHE_LOG_DIR="/var/log/apache2"
+
+COPY index.html /var/www/html/
+
+LABEL description="Webserver"
+LABEL version="1.0.0"
+
+VOLUME /var/www/html/
+EXPOSE 80
+
+# Entrypoint processo para executa o apache em primeiro plano, principal processo do container, (modo exec)
+ENTRYPOINT ["/usr/sbin/apachectl"]
+
+# CMD passa parametros, pro principal processo do container "/usr/sbin/apachectl" 
+CMD ["-D", "FOREGROUND"]
+```
+### Criando a imagen 
+```
+$ docker image build -t meu_apache:4.0 .
+```
+### Gerando container 
+```
+$ docker container run -d -p8001 meu_apache:4.0
+```
+```
+$ docker container ls 
+CONTAINER ID   IMAGE            COMMAND                  CREATED          STATUS          PORTS                                   NAMES
+bcf7e3c5c72d   meu_apache:4.0   "/usr/sbin/apachectl…"   3 seconds ago    Up 2 seconds    0.0.0.0:8001->80/tcp, :::8001->80/tcp   thirsty_kowalevski
+aa529875c14e   9f91b0bc57f5     "/usr/sbin/apachectl…"   20 minutes ago   Up 20 minutes   0.0.0.0:8000->80/tcp, :::8000->80/tcp   romantic_kilby
+7b8271f78683   meu_apache:3.0   "/usr/sbin/apachectl…"   24 minutes ago   Up 24 minutes   0.0.0.0:8081->80/tcp, :::8081->80/tcp   interesting_haibt
+7a41eb807307   meu_apache:1.0   "/usr/sbin/apachectl…"   27 hours ago     Up 27 hours     0.0.0.0:8080->80/tcp, :::8080->80/tcp   infallible_poitras
+```
+### Testando copia que está no diretorio do dockerfile.
+```
+$ curl localhost:8001
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Título do documento</title>
+</head>
+
+<body>
+  Docker APACHE TESTE
+</body>
+
+```
+### Verificando o arquivos no container o diretório 
+```
+$ docker container exec -it bcf7e3c5c72d bash
+
+root@bcf7e3c5c72d:/# cd var/www/html/           
+root@bcf7e3c5c72d:/var/www/html# ls
+index.html
+
+```
+### Usando a opção ADD no lugar do COPY
+
+### COPY -> copia arquivos e diretórios e adiciona no container
+### ADD -> copia arquivos e diretórios com 2 funcões a mais, Ele pega arquivos TAR e copia no container descompactado, somente o conteúdo do arquivo, em relação a arquivo remoto, ex: www.meusite.com/conteudo, ele consegue fazer o download do conteudo e adicionar ao diretório do container. 
+
+```
+FROM debian
+
+RUN apt-get update && apt-get install -y apache2
+RUN chown www-data:www-data /var/lock && chown www-data:www-data /var/run/ && chown www-data:www-data /var/log/
+ENV APACHE_LOCK_DIR="/var/lock"
+ENV APACHE_PID_FILE="/var/run/apache2.pid"
+ENV APACHE_RUN_USER="www-data"
+ENV APACHE_RUN_GROUP="www-data"
+ENV APACHE_LOG_DIR="/var/log/apache2"
+
+ADD index.html /var/www/html/
+
+LABEL description="Webserver"
+LABEL version="1.0.0"
+
+# Expecifica o usuário padrão para container 
+USER root
+# expecifica o diretorio padrão do container
+WORKDIR /var/www/html/
+
+VOLUME /var/www/html/
+EXPOSE 80
+
+ENTRYPOINT ["/usr/sbin/apachectl"]
+
+CMD ["-D", "FOREGROUND"]
+```
+### Buildando a imagem
+```
+$ docker image build -t meu_apache:08 .
+```
+```
+$ docker run -d -p 8005:80 meu_apache:08
+
+$ docker container ps
+CONTAINER ID   IMAGE           COMMAND                  CREATED         STATUS         PORTS                                   NAMES
+f4015ee49dcb   meu_apache:08   "/usr/sbin/apachectl…"   5 seconds ago   Up 5 seconds   0.0.0.0:8005->80/tcp, :::8005->80/tcp   musing_cannon
+
+$ docker exec -it  f4015ee49dcb bash
+root@f4015ee49dcb:/var/www/html#
+```
+
+#### Dockerfile COPY (dir 04)
+```
+FROM python:3
+
+WORKDIR /usr/src/app
+
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+CMD [ "python", "./main" ]
+```
+### main.py
+```
+def somalista(numeros):
+    soma = 0
+    for i in numeros:
+        soma = soma + i
+    return soma
+
+print(somalista([1,3,5,7,9]))
+
+```
+```
+$ docker image build -t meu_python:1.0 .
+....
+$ docker image ls
+.....
+$ docker run -it meu_python:1.0
+25
+```
+#
+
+#### Dockerfile COPY (dir 04)
+### MultiStage
+### A utilização do multistage é utilizado para reduzir o tamanho da imagem final. Por exemplo, para uma aplicação GO, precisaríamos utilizar a imagem GOLANG para realizar o build da imagem, essa imagem possui em torno de 800MB, logo minha imagem final teria os 800MB mais o tamanho da minha aplicação GO. Para contornar isso, poderíamos utilizar a imagem GOLANG apenas para gerar o executável da aplicação GO e depois copia-lo para uma imagem menor como a imagem ALPINE. OBS: A utilização do MULTISTAGE depende muito de como funciona sua aplicação, pois é necessário copiar os arquivos para a outra imagem, com exemplo o APACHE seria bem difícil de fazer. Apenas como comparação, utilizando o multistage a imagem final ficou com 7MB e sem o multistage a imagem final ficou com 800MB.
+
+#### criar um arquivo dentro do dir "meu_go.go"
+```
+package main
+import "fmt"
+
+func main() {
+        fmt.Println("Giropops Strigus Girus")
+}
+
+```
+### dockerfile
+```
+FROM golang
+
+WORKDIR /app
+ADD . /app
+RUN go build -o meugo
+
+ENTRYPOINT ./meugo
+```
+
+```
+$ docker image build -t meu_go:1.0 .
+....
+$ docker image ls
+.....
+$ docker run -it meu_go:1.0
+Giropops Strigus Girus
+
+```
+
+## DOCKER HUB
+### Enviando uma imagem local para repositório de imgs do docker.
+
+
+```
+$ Docker image ls
+
+#escolha sua imagem, apois execute esse comando abaixo.
+
+$ docker image tag 0a66b9b7b0c1 evertonstm/meu_apache:1.0.0
+
+# imagem já com a tag correta
+$ docker image ls| grep evertonstm
+evertonstm/meu_apache   1.0.0     0a66b9b7b0c1   2 hours ago         252MB
+
+# logar no docker hub
+$ docker login
+Login with your Docker ID to push and pull images from Docker Hub. If you don't have a Docker ID, head over to https://hub.docker.com to create one.
+Username: evertonstm
+Password: 
+
+$ docker push evertonstm/meu_apache:1.0.0
+The push refers to repository [docker.io/evertonstm/meu_apache]
+0d34571c1aaa: Pushed 
+31cbd343fd41: Pushed 
+89fda00479fc: Mounted from library/python 
+1.0.0: digest: sha256:71c34493854b5f65c8fa894da101e795a04767720b28077acf2aa8d2b9165aff size: 948
+
+```
+
+## Implantar um servidor Registry
+### Use um comando como o seguinte para iniciar o contêiner do registro:
+
+```
+ docker run -d -p 5000:5000 --restart=always --name registry registry:2
+
+```
+### Marque a imagem como localhost:5000/meu_apache:1.0.0. Isso cria uma tag adicional para a imagem existente. Quando a primeira parte da tag é um nome de host e uma porta, o Docker interpreta isso como o local de um registro ao enviar.
+
+```
+$ docker image tag b9079391a49d localhost:5000/meu_apache:1.0.0
+
+$ docker image push localhost:5000/meu_apache:1.0.0
+
+$ docker run -d -p 8080:80 localhost:5000/meu_apache:1.0.0
+
+```
+
+### Como verificar as imagens
+```
+$ curl localhost:5000/v2/_catalog
+{"repositories":["meu_apache"]}
+
+$ curl localhost:5000/v2/meu_apache/tags/list
+{"name":"meu_apache","tags":["1.0.0"]}
+
+
 ```
