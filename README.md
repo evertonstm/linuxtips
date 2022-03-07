@@ -44,7 +44,7 @@ $ Docker container exec -ti {ID Container} ls /usr/share/nginx/html
     50x.html  index.html
     50x.html  index.html
 ```    
-
+#
 ###   - Acessar o container 
 ```
 $ docker container exec -ti {ID Container} bash
@@ -73,18 +73,18 @@ $ docker container logs -f {container}
 ```
 $ docker container run -d nginx 
 ```
-###  - Mostra tudo que o container esta usando de recurso 
+###  - Mostra todps os recursos que o container esta usando 
 ```
 $ docker container stats {container}
 ```
 ```
 $ docker container top {container}
 ```
-### - Criar container com limite de 128M de memoria
+### - Criar container com limite de 128M de memória
 ```
 $ docker container run -d -m 128M nginx
 ```
-###  - Cria container com 128 de memoria e 1/2 CPU
+###  - Cria container com 128 de memória e 1/2 CPU
 ```
 $ docker container run -d -m 128M --cpus 0.5 nginx
 ```
@@ -111,7 +111,7 @@ $ Docker container rm -f {container}
 ```
 $ docker image ls
 ```
-
+ #
 # DockerFile
 
 ### Criar um arquivo dentro de um diretorio nome dockerfile
@@ -197,8 +197,7 @@ $ docker container logs -f {ID}
 ```
 $ docker container stats {ID}
 ```
-
-
+#
 # Dia 2: (VOLUMES)
 
 ### Vamos criar um diretorio dentro do /opt
@@ -453,8 +452,9 @@ bkp-banco.tar
 ```
 /opt/backupDB$ sudo tar -xvf bkp-banco.tar
 ```
-
+#
 # Dia 2 Dockerfile (sepadando a evolução do arquivo Dockerfile por Dir)
+
 ### DockerFile (dir 01)
 ```
 FROM debian
@@ -472,6 +472,7 @@ LABEL version="1.0.0"
 VOLUME /var/www/html/
 EXPOSE 80
 ```
+#
 ### Adicionando Entrypoint, CMD. (dir 02)
 ```
 FROM debian
@@ -515,6 +516,7 @@ CONTAINER ID   IMAGE            COMMAND                  CREATED        STATUS  
 $ curl localhost:8080
 (Mostrar a saida da pagina no apache)
 ```
+#
 #### Dockerfile COPY (dir 03)
 #### Criar o arquivo index.html na raiz do dockerfile (03/index.html)
 ```
@@ -643,7 +645,7 @@ f4015ee49dcb   meu_apache:08   "/usr/sbin/apachectl…"   5 seconds ago   Up 5 s
 $ docker exec -it  f4015ee49dcb bash
 root@f4015ee49dcb:/var/www/html#
 ```
-
+#
 #### Dockerfile COPY (dir 04)
 ```
 FROM python:3
@@ -680,7 +682,7 @@ $ docker run -it meu_python:1.0
 
 #### Dockerfile COPY (dir 04)
 ### MultiStage
-### A utilização do multistage é utilizado para reduzir o tamanho da imagem final. Por exemplo, para uma aplicação GO, precisaríamos utilizar a imagem GOLANG para realizar o build da imagem, essa imagem possui em torno de 800MB, logo minha imagem final teria os 800MB mais o tamanho da minha aplicação GO. Para contornar isso, poderíamos utilizar a imagem GOLANG apenas para gerar o executável da aplicação GO e depois copia-lo para uma imagem menor como a imagem ALPINE. OBS: A utilização do MULTISTAGE depende muito de como funciona sua aplicação, pois é necessário copiar os arquivos para a outra imagem, com exemplo o APACHE seria bem difícil de fazer. Apenas como comparação, utilizando o multistage a imagem final ficou com 7MB e sem o multistage a imagem final ficou com 800MB.
+ A utilização do multistage é utilizado para reduzir o tamanho da imagem final. Por exemplo, para uma aplicação GO, precisaríamos utilizar a imagem GOLANG para realizar o build da imagem, essa imagem possui em torno de 800MB, logo minha imagem final teria os 800MB mais o tamanho da minha aplicação GO. Para contornar isso, poderíamos utilizar a imagem GOLANG apenas para gerar o executável da aplicação GO e depois copia-lo para uma imagem menor como a imagem ALPINE. OBS: A utilização do MULTISTAGE depende muito de como funciona sua aplicação, pois é necessário copiar os arquivos para a outra imagem, com exemplo o APACHE seria bem difícil de fazer. Apenas como comparação, utilizando o multistage a imagem final ficou com 7MB e sem o multistage a imagem final ficou com 800MB.
 
 #### criar um arquivo dentro do dir "meu_go.go"
 ```
@@ -712,7 +714,7 @@ $ docker run -it meu_go:1.0
 Giropops Strigus Girus
 
 ```
-
+#
 ## DOCKER HUB
 ### Enviando uma imagem local para repositório de imgs do docker.
 
@@ -742,7 +744,6 @@ The push refers to repository [docker.io/evertonstm/meu_apache]
 1.0.0: digest: sha256:71c34493854b5f65c8fa894da101e795a04767720b28077acf2aa8d2b9165aff size: 948
 
 ```
-
 ## Implantar um servidor Registry
 ### Use um comando como o seguinte para iniciar o contêiner do registro:
 
