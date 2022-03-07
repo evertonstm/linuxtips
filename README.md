@@ -107,6 +107,11 @@ $ docker container update --cpus 0.5 --memory 64M b76e4
 ```
 $ Docker container rm -f {container}
 ```
+### Removendo Container 
+```
+docker container rmr -f $(docker ps -q)
+```
+
 ###  - Mostrar as imagens local
 ```
 $ docker image ls
@@ -770,5 +775,102 @@ $ curl localhost:5000/v2/_catalog
 $ curl localhost:5000/v2/meu_apache/tags/list
 {"name":"meu_apache","tags":["1.0.0"]}
 
+```
+#
+### HEALTHCHECK (usando o dockerfile do dir 03)
+O healtcheck checará a cada 5 minutos se a URL localhost está respondendo, caso ela falhe "||" então o container será encerrado com o código 1.
 
 ```
+HEALTCHECK --interval 5m --timeout=3s \
+    CMD curl --retry-max-time 2 -f http://localhost/ || exit 1
+```
+
+```
+FROM debian
+
+RUN apt-get update && apt-get install -y apache2 curl
+RUN chown www-data:www-data /var/lock && chown www-data:www-data /var/run/ && chown www-data:www-data /var/log/
+ENV APACHE_LOCK_DIR="/var/lock"
+ENV APACHE_PID_FILE="/var/run/apache2.pid"
+ENV APACHE_RUN_USER="www-data"
+ENV APACHE_RUN_GROUP="www-data"
+ENV APACHE_LOG_DIR="/var/log/apache2"
+
+ADD index.html /var/www/html/
+
+# O healtcheck checará a cada 5 minutos se a URL localhost está respondendo, caso ela falhe "||" então o container será encerrado com o código 1
+HEALTHCHECK --interval=1m --timeout=3s \
+  CMD curl -f http://localhost/ || exit 1
+
+LABEL description="Webserver"
+LABEL version="1.0.0"
+
+USER root
+
+WORKDIR /var/www/html/
+
+VOLUME /var/www/html/
+EXPOSE 80
+
+ENTRYPOINT ["/usr/sbin/apachectl"]
+
+CMD ["-D", "FOREGROUND"]
+```
+### Atenção: o comando utilizado para o healthcheck deve existir na imagem.
+#
+
+## Editar container (Criar uma imagem de container a partir do container )
+```
+$ docker container run -it ubuntu
+
+root@15ef4275b6e2:/# apt-get update && apt-get install -y nano curl vim
+
+root@15ef4275b6e2:/# cat /etc/issue
+Ubuntu 20.04.4 LTS \n \l
+
+root@15ef4275b6e2:/# echo "TESTE DISTRO" > /etc/issue
+
+root@15ef4275b6e2:/# cat /etc/issue
+TESTE DISTRO
+
+```
+### Saindo do container com CRTL+P+Q, para continuar em execução. 
+
+### Container foi commitado sem a TAG e sem nome:
+```
+$ docker commit -m "Ubuntu com Vim, Curl, nano" 15ef4275b6e2
+sha256:2ab2f2f779b7b9f792934336d797a5c67dbd6816968a7c66d2c6ddc533003c84
+
+$ docker image ls
+REPOSITORY                        TAG       IMAGE ID       CREATED          SIZE
+<none>                            <none>    2ab2f2f779b7   6 seconds ago    185MB
+meu_apache                        1.0.0     46b1a886c531   38 minutes ago   253MB
+```
+### Editando a TAG 
+```
+$ docker image tag 2ab2f2f779b7 ubuntu_vim_curl:1.0
+
+$ docker image ls
+REPOSITORY                        TAG       IMAGE ID       CREATED          SIZE
+ubuntu_vim_curl                   1.0       2ab2f2f779b7   3 minutes ago    185MB
+meu_apache                        1.0.0     46b1a886c531   42 minutes ago   253MB
+
+```
+### Executando o container 
+```
+$ docker container run -ti ubuntu_vim_curl:1.0 
+root@41e1ed80db18:/# cat /etc/issue
+TESTE DISTRO
+root@41e1ed80db18:/# nano 
+.dockerenv  dev/        lib/        libx32/     opt/        run/        sys/        var/        
+bin/        etc/        lib32/      media/      proc/       sbin/       tmp/        
+boot/       home/       lib64/      mnt/        root/       srv/        usr/        
+root@41e1ed80db18:/# vim  
+vim        vim.basic  vimdiff    vimtutor   
+root@41e1ed80db18:/# vim 
+
+```
+### OBs: o IDEAL SEMPRE CRIAR POR DOCKERFILE
+#
+
+# DIA 03 (Intro)
