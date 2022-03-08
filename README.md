@@ -874,6 +874,202 @@ root@41e1ed80db18:/# vim
 #
 
 # **DIA 03 (Docker MACHINE)**
+(https://github.com/docker/machine/releases) <p>
 Docker-machine é utilizado criar uma VM remota para rodar o docker, pode ser utilizado para criar a VM na AWS, Digital Ocean, Virtual Box, Hyper-V entre outros.<p>
 Utilize o docker-machine para gerenciar um host remoto com o Docker
+```
+curl -L https://github.com/docker/machine/releases/download/v0.16.2/docker-machine-`uname -s`-`uname -m` >/tmp/docker-machine && chmod +x /tmp/docker-machine && sudo cp /tmp/docker-machine /usr/local/bin/docker-machine
+```
+~~~
+$ docker-machine --version
+docker-machine version 0.16.2, build bd45ab13
+~~~
+~~~
+$ docker-machine create --driver virtualbox giropops
+Creating CA: /home/everton/.docker/machine/certs/ca.pem
+Creating client certificate: /home/everton/.docker/machine/certs/cert.pem
+Running pre-create checks...
+(giropops) Image cache directory does not exist, creating it at /home/everton/.docker/machine/cache...
+(giropops) No default Boot2Docker ISO found locally, downloading the latest release...
+(giropops) Latest release for github.com/boot2docker/boot2docker is v19.03.12
+(giropops) Downloading /home/everton/.docker/machine/cache/boot2docker.iso from https://github.com/boot2docker/boot2docker/releases/download/v19.03.12/boot2docker.iso...
+(giropops) 0%....10%....20%....30%....40%....50%....60%....70%....80%....90%....100%
+Creating machine...
+(giropops) Copying /home/everton/.docker/machine/cache/boot2docker.iso to /home/everton/.docker/machine/machines/giropops/boot2docker.iso...
+(giropops) Creating VirtualBox VM...
+(giropops) Creating SSH key...
+(giropops) Starting the VM...
+(giropops) Check network to re-create if needed...
+(giropops) Found a new host-only adapter: "vboxnet0"
+Error creating machine: Error in driver during machine creation: Error setting up host only network on machine start: /usr/bin/VBoxManage hostonlyif ipconfig vboxnet0 --ip 192.168.99.1 --netmask 255.255.255.0 failed:
+VBoxManage: error: Code E_ACCESSDENIED (0x80070005) - Access denied (extended info not available)
+VBoxManage: error: Context: "EnableStaticIPConfig(Bstr(pszIp).raw(), Bstr(pszNetmask).raw())" at line 242 of file VBoxManageHostonly.cpp
 
+~~~
+### VBoxManage: error:
+Existem agora 2 soluções óbvias, uma seria mudar a maneira como o docker cria sua máquina para que ela se encaixe no “novo” espaço de endereço que o VirtualBox:
+~~~
+$ docker-machine create --driver virtualbox --virtualbox-memory "2048" --virtualbox-hostonly-cidr 192.168.99.1/21 default
+~~~
+Também podemos resolver isso do outro lado do problema, que é mudar o comportamento do VirtualBox. Para isso precisamos criar o arquivo networks.conf em /etc/vbox. No network.confs podemos dizer ao VirtualBox quais redes estamos permitindo:
+~~~
+sudo mkdir /etc/vbox
+sudo vi /etc/vbox/networks.conf
+ 
+cat /etc/vbox/networks.conf
+* 10.0.0.0/8 192.168.99.0/16
+* 2001::/64
+~~~
+### Acessando container via SSH
+~~~
+$ docker-machine ls
+NAME       ACTIVE   DRIVER       STATE     URL                         SWARM   DOCKER      ERRORS
+giropops   -        virtualbox   Running   tcp://192.168.99.101:2376           v19.03.12   
+$ docker-machine ssh giropops
+   ( '>')
+  /) TC (\   Core is distributed with ABSOLUTELY NO WARRANTY.
+ (/-_--_-\)           www.tinycorelinux.net
+
+docker@giropops:~$ docker container ls
+CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+docker@giropops:~$ cat /etc/issue                                                                        
+Core Linux
+docker@giropops:~$ logout
+~~~
+$ docker-machine env giropops
+~~~
+export DOCKER_TLS_VERIFY="1"
+export DOCKER_HOST="tcp://192.168.99.101:2376"
+export DOCKER_CERT_PATH="/home/everton/.docker/machine/machines/giropops"
+export DOCKER_MACHINE_NAME="giropops"
+# Run this command to configure your shell: 
+# eval $(docker-machine env giropops)
+~~~
+Tras algumas variaveis
+~~~
+$ docker ps
+~~~
+*eval $(docker-machine env {VM})* Executa as 4 variaveis apos isso ja vai conectar no docker do virtualbox s
+~~~
+$ eval $(docker-machine env giropops)
+$ docker ps
+CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+~~~
+~~~
+$ docker container run -d -p8080:80 nginx
+Unable to find image 'nginx:latest' locally
+latest: Pulling from library/nginx
+f7a1c6dad281: Pull complete 
+4d3e1d15534c: Pull complete 
+9ebb164bd1d8: Pull complete 
+59baa8b00c3c: Pull complete 
+a41ae70ab6b4: Pull complete 
+e3908122b958: Pull complete 
+Digest: sha256:1c13bc6de5dfca749c377974146ac05256791ca2fe1979fc8e8278bf0121d285
+Status: Downloaded newer image for nginx:latest
+a147657f66973f681a8cd0b5199cd29ecb8938d6149bcba66ef5cd4b47ba4e26
+
+### Como rodei a variável eval note que estou no meu usuário rodando comando na minha MV###
+
+$ docker ps
+CONTAINER ID   IMAGE     COMMAND                  CREATED         STATUS         PORTS                  NAMES
+a147657f6697   nginx     "/docker-entrypoint.…"   5 seconds ago   Up 5 seconds   0.0.0.0:8080->80/tcp   crazy_montalcini
+~~~
+Acessando o endereço do NGINX pelo terminal ou acessar nesse caso pelo navegador no ip entrega a MV na sua criação "192.168.99.101:8080"
+~~~
+$ curl 192.168.99.101:8080
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+html { color-scheme: light dark; }
+body { width: 35em; margin: 0 auto;
+font-family: Tahoma, Verdana, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
+
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>
+~~~
+~~~
+$ docker-machine ssh giropops
+   ( '>')
+  /) TC (\   Core is distributed with ABSOLUTELY NO WARRANTY.
+ (/-_--_-\)           www.tinycorelinux.net
+
+docker@giropops:~$ docker ps
+CONTAINER ID   IMAGE     COMMAND                  CREATED         STATUS         PORTS                  NAMES
+a147657f6697   nginx     "/docker-entrypoint.…"   5 seconds ago   Up 5 seconds   0.0.0.0:8080->80/tcp   crazy_montalcini
+~~~
+STOP/LS/STATUS/STARTdocker  a maquina 
+~~~
+$ docker-machine stop giropops
+Stopping "giropops"...
+Machine "giropops" was stopped.
+
+$ docker-machine stop giropops
+Stopping "giropops"...
+Machine "giropops" was stopped.
+
+$ docker-machine ls giropops
+NAME       ACTIVE   DRIVER       STATE     URL   SWARM   DOCKER    ERRORS
+giropops   -        virtualbox   Stopped                 Unknown   
+
+$ docker-machine status giropops
+Stopped
+
+$ docker-machine start giropops
+Starting "giropops"...
+(giropops) Check network to re-create if needed...
+(giropops) Waiting for an IP...
+Machine "giropops" was started.
+Waiting for SSH to be available...
+Detecting the provisioner...
+Started machines may have new IP addresses. You may need to re-run the `docker-machine env` command.
+
+$ docker env giropops
+docker: 'env' is not a docker command.
+See 'docker --help'
+
+$ docker-machine env giropops
+export DOCKER_TLS_VERIFY="1"
+export DOCKER_HOST="tcp://192.168.99.101:2376"
+export DOCKER_CERT_PATH="/home/everton/.docker/machine/machines/giropops"
+export DOCKER_MACHINE_NAME="giropops"
+# Run this command to configure your shell: 
+# eval $(docker-machine env giropops)
+~~~
+Removendo o *Eval*
+~~~
+$ docker-machine env giropops
+export DOCKER_TLS_VERIFY="1"
+export DOCKER_HOST="tcp://192.168.99.101:2376"
+export DOCKER_CERT_PATH="/home/everton/.docker/machine/machines/giropops"
+export DOCKER_MACHINE_NAME="giropops"
+# Run this command to configure your shell: 
+# eval $(docker-machine env giropops)
+
+$ eval $(docker-machine env -u)
+~~~
+
+Removendo MV
+~~~
+$ docker-machine rm giropops
+About to remove giropops
+WARNING: This action will delete both local reference and remote instance.
+Are you sure? (y/n): y
+Successfully removed giropops
+~~~
+#
+# Docker Swarm
