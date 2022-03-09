@@ -1132,7 +1132,7 @@ $ docker-machine ssh mv03
   /) TC (\   Core is distributed with ABSOLUTELY NO WARRANTY.
  (/-_--_-\)           www.tinycorelinux.net
 
-docker@mv03:~$ docker swarm join --token SWMTKN-1-49x7a5rnxxqwgijlaezy5k9zr2092aofn8g3jkwmicn822rstd-5inl2uu3gtd09kvc099jxggt4 192.168.100.100:2377
+docker@mv03:~$ docker swarm join --token {Hash GERADO PELO SWARM} 192.168.100.100:2377
 This node joined a swarm as a worker.
 docker@mv03:~$ exit                                                                                                                                                                                                                          
 logout
