@@ -1147,9 +1147,71 @@ mv03   -        virtualbox   Running   tcp://192.168.99.102:2376           v19.0
 ~~~
 ~~~
 $ docker node ls
-ID                            HOSTNAME          STATUS    AVAILABILITY   MANAGER STATUS   ENGINE VERSION
-56v42fcp0z98yqpopkq576m7q *   everton-Macmini   Ready     Active         Leader           20.10.12
-n3rrmld165wnw2de09612qrpy     mv01              Ready     Active                          19.03.12
-ku8lx11904b3ox8afgjx0aw76     mv02              Ready     Active                          19.03.12
-dsb4vfo8ltxc2hr8nj11x9siq     mv03              Ready     Active                          19.03.12
+ID                            HOSTNAME            STATUS              AVAILABILITY        MANAGER STATUS      ENGINE VERSION
+j6feplwyq9i7vjurmj00oa9k9 *   vm01                Ready               Active              Leader              19.03.12
+6qdaot0t39x3f6rkprbdhnhp5     vm02                Ready               Active                                  19.03.12
+rwb3z1m27x8fl9xl3wnf7ksg3     vm03                Ready               Active                                  19.03.12
+~~~
+Promovendo o VM02 para manager (MANAGER STATUS/Reachable)
+~~~
+docker@vm01:~$ docker node promote vm02                                                      
+Node vm02 promoted to a manager in the swarm.
+
+docker@vm01:~$ docker node ls                                                                
+ID                            HOSTNAME            STATUS              AVAILABILITY        MANAGER STATUS      ENGINE VERSION
+j6feplwyq9i7vjurmj00oa9k9 *   vm01                Ready               Active              Leader              19.03.12
+6qdaot0t39x3f6rkprbdhnhp5     vm02                Ready               Active              Reachable           19.03.12
+rwb3z1m27x8fl9xl3wnf7ksg3     vm03                Ready               Active                                  19.03.12
+~~~
+Promovendo o VM03 para manager (MANAGER STATUS/Reachable)
+~~~
+docker@vm01:~$ docker node promote vm03                                                      
+Node vm03 promoted to a manager in the swarm.
+docker@vm01:~$ docker node ls                                                                
+ID                            HOSTNAME            STATUS              AVAILABILITY        MANAGER STATUS      ENGINE VERSION
+j6feplwyq9i7vjurmj00oa9k9 *   vm01                Ready               Active              Leader              19.03.12
+6qdaot0t39x3f6rkprbdhnhp5     vm02                Ready               Active              Reachable           19.03.12
+rwb3z1m27x8fl9xl3wnf7ksg3     vm03                Ready               Active              Reachable           19.03.12
+~~~
+Removendo o VM03 de manager (MANAGER STATUS)
+~~~
+docker@vm01:~$ docker node demote vm03                                                       
+Manager vm03 demoted in the swarm.
+docker@vm01:~$ docker node ls                                                                
+ID                            HOSTNAME            STATUS              AVAILABILITY        MANAGER STATUS      ENGINE VERSION
+j6feplwyq9i7vjurmj00oa9k9 *   vm01                Ready               Active              Leader              19.03.12
+6qdaot0t39x3f6rkprbdhnhp5     vm02                Ready               Active              Reachable           19.03.12
+rwb3z1m27x8fl9xl3wnf7ksg3     vm03                Ready               Active                                  19.03.12
+~~~
+### Recuperando o Token de worker gerado pelo comando docker swarm init
+~~~
+$ docker swarm join-token worker                                                
+To add a worker to this swarm, run the following command:
+
+    docker swarm join --token SWMTKN-1-28g9f5cy9560snsp7rocj5pvbgd09s7ocqm1ol3u4k2vlwu2vg-8yp4apqbtv8qbcz5xtqp8sl2i 192.168.99.102:2377
+~~~
+### Recuperando o Token de manager gerado pelo comando docker swarm init.<p> Nesse caso ao adicionar um nó com esse token ja entra no cluster como manager. 
+~~~
+$ docker swarm join-token manager                                               
+To add a manager to this swarm, run the following command:
+
+    docker swarm join --token SWMTKN-1-28g9f5cy9560snsp7rocj5pvbgd09s7ocqm1ol3u4k2vlwu2vg-8oms09ledop7ahrhbqfiojwy7 192.168.99.102:2377
+~~~
+### Comando *--rotate* gera um novo token para novos nós a ser adicionado. <p> Para os nós com token antigo não faz diferença, a partir desse momento o token antigo que gerou o cluste atual para de funcionar.
+~~~
+docker@vm01:~$ docker swarm join-token --rotate worker                                       
+Successfully rotated worker join token.
+
+To add a worker to this swarm, run the following command:
+
+    docker swarm join --token SWMTKN-1-28g9f5cy9560snsp7rocj5pvbgd09s7ocqm1ol3u4k2vlwu2vg-a6w2e5sdmjp8uz56fvne6a8ko 192.168.99.102:2377
+~~~
+~~~
+docker@vm01:~$ docker swarm join-token --rotate manager                                      
+Successfully rotated manager join token.
+
+To add a manager to this swarm, run the following command:
+
+    docker swarm join --token SWMTKN-1-28g9f5cy9560snsp7rocj5pvbgd09s7ocqm1ol3u4k2vlwu2vg-bvqwiehzw1i9fw53lwfnnfjqk 192.168.99.102:2377
+
 ~~~
