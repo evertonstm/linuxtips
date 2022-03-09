@@ -1215,3 +1215,225 @@ To add a manager to this swarm, run the following command:
     docker swarm join --token SWMTKN-1-28g9f5cy9560snsp7rocj5pvbgd09s7ocqm1ol3u4k2vlwu2vg-bvqwiehzw1i9fw53lwfnnfjqk 192.168.99.102:2377
 
 ~~~
+Criando um serviço Webserver Nginx com 3 replicas
+~~~
+docker@vm01:~$ docker service create --name webserver --replicas 3 -p 8081:80 nginx          
+kkfsq5j2hzmkdbvpak804idqx
+overall progress: 3 out of 3 tasks 
+1/3: running   
+2/3: running   
+3/3: running   
+verify: Service converged 
+
+docker@vm01:~$ docker service ps webserver                                                   
+ID                  NAME                IMAGE               NODE                DESIRED STATE       CURRENT STATE            ERROR               PORTS
+a2gwpqfmreoq        webserver.1         nginx:latest        vm02                Running             Running 35 seconds ago                       
+t4hh3vb98m8g        webserver.2         nginx:latest        vm03                Running             Running 35 seconds ago                       
+qs7jvbsmln7z        webserver.3         nginx:latest        vm01                Running             Running 32 seconds ago                       
+~~~
+Pausando o VM02 para não receber mais serviços
+~~~
+docker@vm01:~$ docker node update --availability pause vm02                                  
+vm02
+
+docker@vm01:~$ docker inspect vm02                                                           
+[
+    {
+        "ID": "6qdaot0t39x3f6rkprbdhnhp5",
+        "Version": {
+            "Index": 52
+        },
+        "CreatedAt": "2022-03-09T16:13:34.138567217Z",
+        "UpdatedAt": "2022-03-09T17:40:57.992035341Z",
+        "Spec": {
+            "Labels": {},
+            "Role": "manager",
+    ------- EM PAUSA ---------------      
+            "Availability": "pause"
+    --------------------------------        
+        },
+        "Description": {
+            "Hostname": "vm02",
+            "Platform": {
+                "Architecture": "x86_64",
+                "OS": "linux"
+            },
+  .............................
+]
+~~~
+Escalando 10 serviços(note que no VM02 não receberá mais serviços, somente o que ja estava escalado anteriormente)
+~~~
+docker@vm01:~$ docker service scale webserver=10                                             
+webserver scaled to 10
+overall progress: 10 out of 10 tasks 
+1/10: running   
+2/10: running   
+3/10: running   
+4/10: running   
+5/10: running   
+6/10: running   
+7/10: running   
+8/10: running   
+9/10: running   
+10/10: running   
+verify: Service converged 
+~~~
+### (Note que no VM02 não receberá mais serviços, somente o que ja estava escalado anteriormente)
+~~~
+docker@vm01:~$ docker service ps webserver                                                   
+ID                  NAME                IMAGE               NODE                DESIRED STATE       CURRENT STATE            ERROR               PORTS
+------------------------------------------------------------------------------------------------------------------------
+a2gwpqfmreoq        webserver.1         nginx:latest        vm02                Running             Running 19 minutes ago                       
+------------------------------------------------------------------------------------------------------------------------
+t4hh3vb98m8g        webserver.2         nginx:latest        vm03                Running             Running 19 minutes ago                       
+qs7jvbsmln7z        webserver.3         nginx:latest        vm01                Running             Running 19 minutes ago                       
+9vspmu4f842l        webserver.4         nginx:latest        vm03                Running             Running 25 seconds ago                       
+at12l9f1l0jf        webserver.5         nginx:latest        vm01                Running             Running 25 seconds ago                       
+vwwn3lone6f2        webserver.6         nginx:latest        vm03                Running             Running 25 seconds ago                       
+hdnmefpup1yv        webserver.7         nginx:latest        vm01                Running             Running 25 seconds ago                       
+hekshfcev083        webserver.8         nginx:latest        vm03                Running             Running 25 seconds ago                       
+uxgylr92d5c2        webserver.9         nginx:latest        vm01                Running             Running 25 seconds ago                       
+vz5yn3eqezwr        webserver.10        nginx:latest        vm03                Running             Running 25 seconds ago               
+~~~
+
+~~~
+docker@vm01:~$ docker service scale webserver=3                                              
+webserver scaled to 3
+overall progress: 3 out of 3 tasks 
+1/3: running   
+2/3: running   
+3/3: running   
+verify: Service converged 
+~~~
+
+~~~
+docker@vm01:~$ docker service ps webserver                                                   
+ID                  NAME                IMAGE               NODE                DESIRED STATE       CURRENT STATE            ERROR               PORTS
+a2gwpqfmreoq        webserver.1         nginx:latest        vm02                Running             Running 20 minutes ago                       
+t4hh3vb98m8g        webserver.2         nginx:latest        vm03                Running             Running 20 minutes ago                       
+qs7jvbsmln7z        webserver.3         nginx:latest        vm01                Running             Running 20 minutes ago                       
+~~~
+
+Ativando novamente o no VM02 e scalando novamente.
+
+~~~
+docker@vm01:~$ docker node update --availability active vm02                                 
+vm02
+docker@vm01:~$ docker service scale webserver=10                                             
+webserver scaled to 10
+overall progress: 10 out of 10 tasks 
+1/10: running   
+2/10: running   
+3/10: running   
+4/10: running   
+5/10: running   
+6/10: running   
+7/10: running   
+8/10: running   
+9/10: running   
+10/10: running   
+verify: Service converged 
+
+docker@vm01:~$ docker service ps webserver                                                   
+ID                  NAME                IMAGE               NODE                DESIRED STATE       CURRENT STATE            ERROR               PORTS
+a2gwpqfmreoq        webserver.1         nginx:latest        vm02                Running             Running 20 minutes ago                       
+t4hh3vb98m8g        webserver.2         nginx:latest        vm03                Running             Running 20 minutes ago                       
+qs7jvbsmln7z        webserver.3         nginx:latest        vm01                Running             Running 20 minutes ago                       
+xz215hmmjeeu        webserver.4         nginx:latest        vm03                Running             Running 10 seconds ago                       
+h2oq3802jhqz        webserver.5         nginx:latest        vm01                Running             Running 10 seconds ago                       
+muu2oihspz2u        webserver.6         nginx:latest        vm01                Running             Running 10 seconds ago                       
+u2y3utsqf509        webserver.7         nginx:latest        vm02                Running             Running 10 seconds ago                       
+ah87imvof11s        webserver.8         nginx:latest        vm03                Running             Running 10 seconds ago                       
+weo0y8ab71sd        webserver.9         nginx:latest        vm01                Running             Running 10 seconds ago                       
+d97buissgkog        webserver.10        nginx:latest        vm02                Running             Running 10 seconds ago                       
+~~~
+
+
+Usando a tag dain para manutenção do nó (os serviços foram alocado para outros nós)
+
+~~~
+docker@vm01:~$ docker node update --availability drain vm02                                  
+vm02
+docker@vm01:~$ docker service ps webserver                                                   
+ID                  NAME                IMAGE               NODE                DESIRED STATE       CURRENT STATE                     ERROR               PORTS
+------------------------------------------------------------------------------------------------------------------------------
+ujbb8icy0yii        webserver.1         nginx:latest        vm03                Running             Running less than a second ago                        
+a2gwpqfmreoq         \_ webserver.1     nginx:latest        vm02                Shutdown            Shutdown less than a second ago 
+-------------------------------------------------------------------------------------------------------------------------------                      
+t4hh3vb98m8g        webserver.2         nginx:latest        vm03                Running             Running 21 minutes ago                                
+qs7jvbsmln7z        webserver.3         nginx:latest        vm01                Running             Running 21 minutes ago                                
+xz215hmmjeeu        webserver.4         nginx:latest        vm03                Running             Running about a minute ago                            
+h2oq3802jhqz        webserver.5         nginx:latest        vm01                Running             Running about a minute ago                            
+muu2oihspz2u        webserver.6         nginx:latest        vm01                Running             Running about a minute ago                            
+iw0drzfua6ht        webserver.7         nginx:latest        vm03                Running             Running less than a second ago          
+u2y3utsqf509         \_ webserver.7     nginx:latest        vm02                Shutdown            Shutdown less than a second ago  
+--------------------------------------------------------------------------------------------------------------------------------
+ah87imvof11s        webserver.8         nginx:latest        vm03                Running             Running about a minute ago                            
+weo0y8ab71sd        webserver.9         nginx:latest        vm01                Running             Running about a minute ago                            
+l7uqw3dk8e3f        webserver.10        nginx:latest        vm01                Running             Running less than a second ago 
+--------------------------------------------------------------------------------------------------------------------------------                       
+d97buissgkog         \_ webserver.10    nginx:latest        vm02                Shutdown            Shutdown less than a second ago     
+~~~
+
+Note que o serviço não volta ao nó, por segurança, escale uma quandidade menor. 
+~~~
+docker@vm01:~$ docker service ps webserver                                                   
+ID                  NAME                IMAGE               NODE                DESIRED STATE       CURRENT STATE                ERROR               PORTS
+ujbb8icy0yii        webserver.1         nginx:latest        vm03                Running             Running 14 seconds ago                           
+a2gwpqfmreoq         \_ webserver.1     nginx:latest        vm02                Shutdown            Shutdown 15 seconds ago                          
+t4hh3vb98m8g        webserver.2         nginx:latest        vm03                Running             Running 21 minutes ago                           
+qs7jvbsmln7z        webserver.3         nginx:latest        vm01                Running             Running 21 minutes ago                           
+xz215hmmjeeu        webserver.4         nginx:latest        vm03                Running             Running about a minute ago                       
+h2oq3802jhqz        webserver.5         nginx:latest        vm01                Running             Running about a minute ago                       
+muu2oihspz2u        webserver.6         nginx:latest        vm01                Running             Running about a minute ago                       
+iw0drzfua6ht        webserver.7         nginx:latest        vm03                Running             Running 14 seconds ago                           
+u2y3utsqf509         \_ webserver.7     nginx:latest        vm02                Shutdown            Shutdown 15 seconds ago                          
+ah87imvof11s        webserver.8         nginx:latest        vm03                Running             Running about a minute ago                       
+weo0y8ab71sd        webserver.9         nginx:latest        vm01                Running             Running about a minute ago                       
+l7uqw3dk8e3f        webserver.10        nginx:latest        vm01                Running             Running 15 seconds ago                           
+d97buissgkog         \_ webserver.10    nginx:latest        vm02                Shutdown            Shutdown 15 seconds ago                          
+                 
+~~~
+~~~         
+docker@vm01:~$ docker service scale webserver=1                                                                                                                                              
+webserver scaled to 1
+overall progress: 1 out of 1 tasks 
+1/1: running   [==================================================>] 
+verify: Service converged 
+docker@vm01:~$ docker service ps webserver                                                                                                                                                   
+ID                  NAME                IMAGE               NODE                DESIRED STATE       CURRENT STATE            ERROR               PORTS
+ujbb8icy0yii        webserver.1         nginx:latest        vm03                Running             Running 6 minutes ago                        
+a2gwpqfmreoq         \_ webserver.1     nginx:latest        vm02                Shutdown            Shutdown 6 minutes ago  
+~~~
+
+~~~                     
+docker@vm01:~$ docker service scale webserver=10                                                                                                                                             
+webserver scaled to 10
+overall progress: 10 out of 10 tasks 
+1/10: running   [==================================================>] 
+2/10: running   [==================================================>] 
+3/10: running   [==================================================>] 
+4/10: running   [==================================================>] 
+5/10: running   [==================================================>] 
+6/10: running   [==================================================>] 
+7/10: running   [==================================================>] 
+8/10: running   [==================================================>] 
+9/10: running   [==================================================>] 
+10/10: running   [==================================================>] 
+verify: Service converged 
+docker@vm01:~$ docker service ps webserver                                                                                                                                                   
+ID                  NAME                IMAGE               NODE                DESIRED STATE       CURRENT STATE            ERROR               PORTS
+ujbb8icy0yii        webserver.1         nginx:latest        vm03                Running             Running 7 minutes ago                        
+a2gwpqfmreoq         \_ webserver.1     nginx:latest        vm02                Shutdown            Shutdown 7 minutes ago                       
+3x0ppapeqn1a        webserver.2         nginx:latest        vm01                Running             Running 8 seconds ago                        
+ono5wvmgjr02        webserver.3         nginx:latest        vm03                Running             Running 9 seconds ago                        
+qe81ll9220ec        webserver.4         nginx:latest        vm02                Running             Running 8 seconds ago                        
+l5gxlpu5cfk6        webserver.5         nginx:latest        vm02                Running             Running 8 seconds ago                        
+q4zlskhbtywc        webserver.6         nginx:latest        vm02                Running             Running 8 seconds ago                        
+8wbhdbjslqvj        webserver.7         nginx:latest        vm01                Running             Running 8 seconds ago                        
+fe3brscuxmoy        webserver.8         nginx:latest        vm01                Running             Running 8 seconds ago                        
+qfijkou84wm8        webserver.9         nginx:latest        vm03                Running             Running 9 seconds ago                        
+r1yak2j0uuzz        webserver.10        nginx:latest        vm01                Running             Running 8 seconds ago                        
+docker@vm01:~$                                                                                                                          ~~~
+                                                  
+
