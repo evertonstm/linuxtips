@@ -1073,3 +1073,83 @@ Successfully removed giropops
 ~~~
 #
 # Docker Swarm
+```
+docker-machine create --driver virtualbox mv01
+
+docker-machine create --driver virtualbox mv02
+
+docker-machine create --driver virtualbox mv03
+```
+~~~
+$ docker-machine ls
+NAME   ACTIVE   DRIVER       STATE     URL                         SWARM   DOCKER      ERRORS
+mv01   -        virtualbox   Running   tcp://192.168.99.100:2376           v19.03.12   
+mv02   -        virtualbox   Running   tcp://192.168.99.101:2376           v19.03.12   
+mv03   -        virtualbox   Running   tcp://192.168.99.102:2376           v19.03.12   
+~~~
+
+~~~
+$ docker swarm init --advertise-addr 192.168.100.100
+Swarm initialized: current node (56v42fcp0z98yqpopkq576m7q) is now a manager.
+
+To add a worker to this swarm, run the following command:
+
+    docker swarm join --token SWMTKN-1-49x7a5rnxxqwgijlaezy5k9zr2092aofn8g3jkwmicn822rstd-5inl2uu3gtd09kvc099jxggt4 192.168.100.100:2377
+
+To add a manager to this swarm, run 'docker swarm join-token manager' and follow the instructions.
+
+~~~
+Guardei no arquivo swarm
+~~~ 
+$ echo docker swarm join --token SWMTKN-1-49x7a5rnxxqwgijlaezy5k9zr2092aofn8g3jkwmicn822rstd-5inl2uu3gtd09kvc099jxggt4 192.168.100.100:2377 > swarm
+~~~
+
+~~~
+$ docker-machine ssh mv01
+   ( '>')
+  /) TC (\   Core is distributed with ABSOLUTELY NO WARRANTY.
+ (/-_--_-\)           www.tinycorelinux.net
+
+docker@mv01:~$ docker swarm join --token SWMTKN-1-49x7a5rnxxqwgijlaezy5k9zr2092aofn8g3jkwmicn822rstd-5inl2uu3gtd09kvc099jxggt4 192.168.100.100:2377
+This node joined a swarm as a worker.
+docker@mv01:~$ exit                                                                         
+~~~
+~~~
+$ docker-machine ssh mv02
+   ( '>')
+  /) TC (\   Core is distributed with ABSOLUTELY NO WARRANTY.
+ (/-_--_-\)           www.tinycorelinux.net
+
+docker@mv02:~$ docker swarm join --token SWMTKN-1-49x7a5rnxxqwgijlaezy5k9zr2092aofn8g3jkwmicn822rstd-5inl2uu3gtd09kvc099jxggt4 192.168.100.100:2377
+This node joined a swarm as a worker.
+docker@mv02:~$ exit                                                                                                                                                                                                                          
+logout
+~~~
+
+~~~
+$ docker-machine ssh mv03
+   ( '>')
+  /) TC (\   Core is distributed with ABSOLUTELY NO WARRANTY.
+ (/-_--_-\)           www.tinycorelinux.net
+
+docker@mv03:~$ docker swarm join --token SWMTKN-1-49x7a5rnxxqwgijlaezy5k9zr2092aofn8g3jkwmicn822rstd-5inl2uu3gtd09kvc099jxggt4 192.168.100.100:2377
+This node joined a swarm as a worker.
+docker@mv03:~$ exit                                                                                                                                                                                                                          
+logout
+~~~
+
+~~~
+$ docker-machine ls
+NAME   ACTIVE   DRIVER       STATE     URL                         SWARM   DOCKER      ERRORS
+mv01   -        virtualbox   Running   tcp://192.168.99.100:2376           v19.03.12   
+mv02   -        virtualbox   Running   tcp://192.168.99.101:2376           v19.03.12   
+mv03   -        virtualbox   Running   tcp://192.168.99.102:2376           v19.03.12   
+~~~
+~~~
+$ docker node ls
+ID                            HOSTNAME          STATUS    AVAILABILITY   MANAGER STATUS   ENGINE VERSION
+56v42fcp0z98yqpopkq576m7q *   everton-Macmini   Ready     Active         Leader           20.10.12
+n3rrmld165wnw2de09612qrpy     mv01              Ready     Active                          19.03.12
+ku8lx11904b3ox8afgjx0aw76     mv02              Ready     Active                          19.03.12
+dsb4vfo8ltxc2hr8nj11x9siq     mv03              Ready     Active                          19.03.12
+~~~
