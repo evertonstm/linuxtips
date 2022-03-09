@@ -1094,14 +1094,14 @@ Swarm initialized: current node (56v42fcp0z98yqpopkq576m7q) is now a manager.
 
 To add a worker to this swarm, run the following command:
 
-    docker swarm join --token SWMTKN-1-49x7a5rnxxqwgijlaezy5k9zr2092aofn8g3jkwmicn822rstd-5inl2uu3gtd09kvc099jxggt4 192.168.100.100:2377
+    docker swarm join --token {Hash GERADO PELO SWARM} 192.168.100.100:2377
 
 To add a manager to this swarm, run 'docker swarm join-token manager' and follow the instructions.
 
 ~~~
 Guardei no arquivo swarm
 ~~~ 
-$ echo docker swarm join --token SWMTKN-1-49x7a5rnxxqwgijlaezy5k9zr2092aofn8g3jkwmicn822rstd-5inl2uu3gtd09kvc099jxggt4 192.168.100.100:2377 > swarm
+$ echo docker swarm join --token {Hash GERADO PELO SWARM} 192.168.100.100:2377 > swarm
 ~~~
 
 ~~~
@@ -1110,7 +1110,7 @@ $ docker-machine ssh mv01
   /) TC (\   Core is distributed with ABSOLUTELY NO WARRANTY.
  (/-_--_-\)           www.tinycorelinux.net
 
-docker@mv01:~$ docker swarm join --token SWMTKN-1-49x7a5rnxxqwgijlaezy5k9zr2092aofn8g3jkwmicn822rstd-5inl2uu3gtd09kvc099jxggt4 192.168.100.100:2377
+docker@mv01:~$ docker swarm join --token {Hash GERADO PELO SWARM} 192.168.100.100:2377
 This node joined a swarm as a worker.
 docker@mv01:~$ exit                                                                         
 ~~~
@@ -1120,7 +1120,7 @@ $ docker-machine ssh mv02
   /) TC (\   Core is distributed with ABSOLUTELY NO WARRANTY.
  (/-_--_-\)           www.tinycorelinux.net
 
-docker@mv02:~$ docker swarm join --token SWMTKN-1-49x7a5rnxxqwgijlaezy5k9zr2092aofn8g3jkwmicn822rstd-5inl2uu3gtd09kvc099jxggt4 192.168.100.100:2377
+docker@mv02:~$ docker swarm join --token {Hash GERADO PELO SWARM} 192.168.100.100:2377
 This node joined a swarm as a worker.
 docker@mv02:~$ exit                                                                                                                                                                                                                          
 logout
