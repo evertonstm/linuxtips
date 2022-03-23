@@ -1341,8 +1341,9 @@ ID                  NAME                IMAGE               NODE                
 ujbb8icy0yii        webserver.1         nginx:latest        vm03                Running             Running 6 minutes ago                        
 a2gwpqfmreoq         \_ webserver.1     nginx:latest        vm02                Shutdown            Shutdown 6 minutes ago  
 ~~~
+
 ~~~                     
-docker@vm01:~$ docker service scale webserver=10                                                                                                                                             
+docker@vm01:~$ docker service scale webserver=10                                                                                                                                 
 webserver scaled to 10
 overall progress: 10 out of 10 tasks 
 1/10: running   [==================================================>] 
@@ -1369,6 +1370,193 @@ q4zlskhbtywc        webserver.6         nginx:latest        vm02                
 fe3brscuxmoy        webserver.8         nginx:latest        vm01                Running             Running 8 seconds ago                        
 qfijkou84wm8        webserver.9         nginx:latest        vm03                Running             Running 9 seconds ago                        
 r1yak2j0uuzz        webserver.10        nginx:latest        vm01                Running             Running 8 seconds ago                        
-docker@vm01:~$                                                                                                                          ~~~
-                                                  
+docker@vm01:~$                                                                                                                       
+~~~                                                  
+
+### Service 
+
+docker service será executado no cluster (distribuindo o balanceamento de carga).
+~~~
+$ docker service create --name giropops --replicas 3 -p 8085:80 nginx 
+~~~
+
+~~~
+$ docker service ls                                                     ID                  NAME                MODE                REPLICAS            IMAGE               PORTS
+l3gryb9607sl        giropops            replicated          3/3                 nginx:latest        *:8085->80/tcp
+~~~
+Onde está rodando no cluster
+~~~
+$ docker service ps giropops                                           
+ID                  NAME                IMAGE               NODE                DESIRED STATE       CURRENT STATE           ERROR               PORTS
+gbf1wqjjn9w1        giropops.1          nginx:latest        vm01                Running             Running 3 minutes ago                       
+rlmqzbc7xp4q        giropops.2          nginx:latest        vm03                Running             Running 3 minutes ago                       
+pnflq6hea4rr        giropops.3          nginx:latest        vm02                Running             Running 3 minutes ago         
+~~~
+Para ver mais detalhes do container (name).<p>
+obs: o --pretty mostra as informações condensada.
+~~~
+$ docker service inspect giropops --pretty                             
+
+ID:		l3gryb9607sldblfa9f6gqc0w
+Name:		giropops
+Service Mode:	Replicated
+ Replicas:	3
+Placement:
+UpdateConfig:
+ Parallelism:	1
+ On failure:	pause
+ Monitoring Period: 5s
+ Max failure ratio: 0
+ Update order:      stop-first
+RollbackConfig:
+ Parallelism:	1
+ On failure:	pause
+ Monitoring Period: 5s
+ Max failure ratio: 0
+ Rollback order:    stop-first
+ContainerSpec:
+ Image:		nginx:latest@sha256:e1211ac17b29b585ed1aee166a17fad63d344bc973bc63849d74c6452d549b3e
+ Init:		false
+Resources:
+Endpoint Mode:	vip
+Ports:
+ PublishedPort = 8085
+  Protocol = tcp
+  TargetPort = 80
+  PublishMode = ingress 
+~~~
+Escalando mais serviço
+~~~
+$ docker service scale giropops=10                                      
+giropops scaled to 10
+overall progress: 10 out of 10 tasks 
+1/10: running   
+2/10: running   
+3/10: running   
+4/10: running   
+5/10: running   
+6/10: running   
+7/10: running   
+8/10: running   
+9/10: running   
+10/10: running   
+verify: Service converged 
+~~~
+
+~~~
+$ docker ps
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS               NAMES
+396fba5740b3        nginx:latest        "/docker-entrypoint.…"   12 minutes ago      Up 12 minutes       80/tcp              everton.2.rf83d9zwxkaw4mj8ps9r0pkj3
+~~~
+~~~
+docker@vm01:~$ docker logs -f everton.2.rf83d9zwxkaw4mj8ps9r0pkj3                                        
+/docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
+/docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
+/docker-entrypoint.sh: Launching /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
+10-listen-on-ipv6-by-default.sh: info: Getting the checksum of /etc/nginx/conf.d/default.conf
+10-listen-on-ipv6-by-default.sh: info: Enabled listen on IPv6 in /etc/nginx/conf.d/default.conf
+/docker-entrypoint.sh: Launching /docker-entrypoint.d/20-envsubst-on-templates.sh
+/docker-entrypoint.sh: Launching /docker-entrypoint.d/30-tune-worker-processes.sh
+/docker-entrypoint.sh: Configuration complete; ready for start up
+2022/03/23 14:14:33 [notice] 1#1: using the "epoll" event method
+2022/03/23 14:14:33 [notice] 1#1: nginx/1.21.6
+2022/03/23 14:14:33 [notice] 1#1: built by gcc 10.2.1 20210110 (Debian 10.2.1-6) 
+2022/03/23 14:14:33 [notice] 1#1: OS: Linux 4.19.130-boot2docker
+2022/03/23 14:14:33 [notice] 1#1: getrlimit(RLIMIT_NOFILE): 1048576:1048576
+2022/03/23 14:14:33 [notice] 1#1: start worker processes
+2022/03/23 14:14:33 [notice] 1#1: start worker process 30
+
+~~~
+
+Para remover o serviço
+~~~
+$ docker service rm giropops                                                     
+giropops
+~~~
+
+### Alerta para um problema volume/replicas
+Por que mostra a modificação correta do index.html <p> 
+Por Default o docker não faz o sync do conteudo entre os volumes, 
+~~~
+$ docker volume create everton
+everton
+
+# cd /var/lib/docker/volumes/everton/_data/
+root@vm01:/var/lib/docker/volumes/everton/_data# ls                                                      
+root@vm01:/var/lib/docker/volumes/everton/_data# vim index.html
+
+# cat index.html                                          
+Everton Reis
+~~~
+0
+~~~
+root@vm01:~# docker service create --name everton --replicas 3 -p 8088:80 --mount type=volume,src=everton,dst=/usr/share/nginx/html nginx 
+t7q9yaikt6ujcgk0f7qzs4eqz
+overall progress: 3 out of 3 tasks 
+1/3: running   [==================================================>] 
+2/3: running   [==================================================>] 
+3/3: running   [==================================================>] 
+verify: Service converged 
+~~~
+
+~~~
+root@vm01:~# curl localhost:8088                                                                                                                                                             
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+html { color-scheme: light dark; }
+body { width: 35em; margin: 0 auto;
+font-family: Tahoma, Verdana, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
+
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>
+~~~
+~~~
+root@vm01:~# curl localhost:8088                                                                                                                                                             
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+<style>
+html { color-scheme: light dark; }
+body { width: 35em; margin: 0 auto;
+font-family: Tahoma, Verdana, Arial, sans-serif; }
+</style>
+</head>
+<body>
+<h1>Welcome to nginx!</h1>
+<p>If you see this page, the nginx web server is successfully installed and
+working. Further configuration is required.</p>
+
+<p>For online documentation and support please refer to
+<a href="http://nginx.org/">nginx.org</a>.<br/>
+Commercial support is available at
+<a href="http://nginx.com/">nginx.com</a>.</p>
+
+<p><em>Thank you for using nginx.</em></p>
+</body>
+</html>
+~~~
+### Alerta
+~~~
+################################
+root@vm01:~# curl localhost:8088                                                                                                         
+
+Everton Reis
+################################
+~~~
 
