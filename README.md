@@ -1393,7 +1393,7 @@ rlmqzbc7xp4q        giropops.2          nginx:latest        vm03                
 pnflq6hea4rr        giropops.3          nginx:latest        vm02                Running             Running 3 minutes ago         
 ~~~
 Para ver mais detalhes do container (name).<p>
-obs: o --pretty mostra as informações condensada.
+obs: O --pretty mostra as informações condensada.
 ~~~
 $ docker service inspect giropops --pretty                             
 
