@@ -1554,9 +1554,205 @@ Commercial support is available at
 ### Alerta
 ~~~
 ################################
-root@vm01:~# curl localhost:8088                                                                                                         
+root@vm01:~# curl localhost :8088                                                                                                         
 
 Everton Reis
 ################################
 ~~~
 
+### Docker Swarm Service e Network
+~~~
+$ docker service create --name WebServer --replicas 3 -p 8080:80 --mount type=volume,src=giropops,dst=/usr/share/nginx/html --hostname sua_mae --limit-memory 64M --env everton=lindo --dns 8.8.8.8 nginx
+~~~
+
+~~~
+$ docker ps                                                                                                                      CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS               NAMES
+070554aa9249        nginx:latest        "/docker-entrypoint.…"   10 minutes ago      Up 10 minutes       80/tcp              WebServer.2.z3o929p4wkdro3t86ufaxf2c4
+docker@vm01:~$ docker exec -it 070554aa9249 bash                                                 
+~~~
+
+~~~
+$ docker service create --name nginx2 -p 8088:80 nginx                                                                          
+q3ctl93p1y1h915ugw7lz1omd
+overall progress: 1 out of 1 tasks 
+1/1: running   [==================================================>] 
+verify: Service converged 
+
+docker@vm01:~$ docker service ls                                                                                                             
+ID                  NAME                MODE                REPLICAS            IMAGE               PORTS
+krk59i5tbxxn        WebServer           replicated          3/3                 nginx:latest        *:8080->80/tcp
+q3ctl93p1y1h        nginx2              replicated          1/1                 nginx:latest        *:8088->80/tcp
+~~~
+
+~~~
+docker-machine ls                       
+NAME   ACTIVE   DRIVER       STATE     URL                         SWARM   DOCKER      ERRORS
+vm01   -        virtualbox   Running   tcp://192.168.99.100:2376           v19.03.12   
+vm02   -        virtualbox   Running   tcp://192.168.99.101:2376           v19.03.12   
+vm03   -        virtualbox   Running   tcp://192.168.99.102:2376           v19.03.12   
+vm04   -        virtualbox   Running   tcp://192.168.99.103:2376           v19.03.12   
+
+
+~~~
+
+~~~
+evertonreis@MacminiEverton ~ % docker-machine ssh vm01
+   ( '>')
+  /) TC (\   Core is distributed with ABSOLUTELY NO WARRANTY.
+ (/-_--_-\)           www.tinycorelinux.net
+
+~~~
+
+~~~
+docker@vm01:~$ docker node ls                                                                                                                                                                                                                                                
+ID                            HOSTNAME            STATUS              AVAILABILITY        MANAGER STATUS      ENGINE VERSION
+zkp4qybd89wso0t4bm8bxuaw4 *   vm01                Ready               Active              Leader              19.03.12
+7vdmrhwxwshryi4i18kezy68t     vm02                Ready               Active                                  19.03.12
+urg79jf6w2npk4d8qixlfntw2     vm03                Ready               Active                                  19.03.12
+j3d8teiot53vzbd96k1ztdy1w     vm04                Ready               Active                                  19.03.12
+
+~~~
+
+~~~
+docker@vm01:~$ docker service ls                                                                                                                                                                                                                                             
+ID                  NAME                MODE                REPLICAS            IMAGE               PORTS
+
+~~~
+
+~~~
+docker@vm01:~$  echo -n "Everton reis" | docker secret create everton -                                                                                                                                                                                                      
+wy80p7byicz00kqtffn1j84nr
+
+~~~
+
+~~~
+docker@vm01:~$ docker secret ls                                                                                                                                                                                                                                              
+ID                          NAME                DRIVER              CREATED             UPDATED
+wy80p7byicz00kqtffn1j84nr   everton                                 7 seconds ago       7 seconds ago
+
+~~~
+
+~~~
+docker@vm01:~$ docker secret inspect                                                                                                                                      
+~~~
+
+~~~
+docker@vm01:~$ docker secret inspect everton                                                                                                                                                                                                                                 
+[
+    {
+        "ID": "wy80p7byicz00kqtffn1j84nr",
+        "Version": {
+            "Index": 158
+        },
+        "CreatedAt": "2022-03-29T00:59:24.109373005Z",
+        "UpdatedAt": "2022-03-29T00:59:24.109373005Z",
+        "Spec": {
+            "Name": "everton",
+            "Labels": {}
+        }
+    }
+]
+
+~~~
+~~~
+docker@vm01:~$ vi teste.txt    
+
+~~~
+~~~                                                                                                        
+docker@vm01:~$ docker secret create everton-arquivos teste.txt                                                                                                                                                                                                               
+in89uoft9pqynngedixb8owxd
+~~~
+~~~
+docker@vm01:~$ ls                                                                                                                                                                                                                                                            
+teste.txt
+~~~
+~~~
+docker@vm01:~$ docker secret inspect everton-arquivos 
+[
+    {
+        "ID": "in89uoft9pqynngedixb8owxd",
+        "Version": {
+            "Index": 159
+        },
+        "CreatedAt": "2022-03-29T01:08:15.821419799Z",
+        "UpdatedAt": "2022-03-29T01:08:15.821419799Z",
+        "Spec": {
+            "Name": "everton-arquivos",
+            "Labels": {}
+        }
+    }
+]
+~~~
+~~~
+docker@vm01:~$ docker secret rm everton                                                                                                                                      
+~~~                                                                                                
+
+~~~
+docker@vm01:~$ docker service create --name nginx -p 8080:80 --secret everton-arquivos nginx                                                                                                                                                                                 
+9dbumi2ww3dhv7m271y2voc3w
+overall progress: 1 out of 1 tasks 
+1/1: running   [==================================================>] 
+verify: Service converged 
+docker@vm01:~$ docker service ls                                                                                                                                                                                                                                             
+ID                  NAME                MODE                REPLICAS            IMAGE               PORTS
+9dbumi2ww3dh        nginx               replicated          1/1                 nginx:latest        *:8080->80/tcp
+
+~~~
+~~~
+ docker@vm01:~$ docker service scale nginx=4                                                                                                                                                                                                                                  
+nginx scaled to 4
+overall progress: 4 out of 4 tasks 
+1/4: running   [==================================================>] 
+2/4: running   [==================================================>] 
+3/4: running   [==================================================>] 
+4/4: running   [==================================================>] 
+verify: Service converged 
+~~~
+~~~
+docker@vm01:~$ docker ps                                                                                                                                                                                                                                                     
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS               NAMES
+454ad72d0c09        nginx:latest        "/docker-entrypoint.…"   8 seconds ago       Up 7 seconds        80/tcp              nginx.4.cn2tklj6vym1a0jo5fhl600dd
+~~~
+
+~~~
+
+docker@vm01:~$ docker exec -ti 454ad72d0c09 bash                                                                                                                                                     
+~~~       
+~~~
+root@454ad72d0c09:/# cat /run/secrets/everton-arquivos 
+Everton Reis TESTE
+
+root@454ad72d0c09:/# exit
+exit
+~~~
+~~~
+
+docker@vm01:~$ echo -n "Everton Reis curso de docker linuxtips" | docker secret create everton -                                                                                                                                                                             
+xvivrxvgw0in868z7a55l5zz2
+docker@vm01:~$ docker sercret ls                                                                                                                                                                                                                                             
+docker@vm01:~$ docker secret ls                                                                                                                                                                                                                                              
+ID                          NAME                DRIVER              CREATED             UPDATED
+xvivrxvgw0in868z7a55l5zz2   everton                                 17 seconds ago      17 seconds ago
+in89uoft9pqynngedixb8owxd   everton-arquivos                        21 minutes ago      21 minutes ago
+~~~
+~~~
+
+docker@vm01:~$ docker service update --secret-add everton nginx                                                                                                                                                                                                              
+overall progress: 4 out of 4 tasks 
+1/4: running   [==================================================>] 
+2/4: running   [==================================================>] 
+3/4: running   [==================================================>] 
+4/4: running   [==================================================>] 
+verify: Service converged 
+~~~
+~~~
+docker@vm01:~$ docker ps                                                                                                                                                                                                                                                     
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS               NAMES
+62e7a53027a5        nginx:latest        "/docker-entrypoint.…"   24 seconds ago      Up 20 seconds       80/tcp              nginx.4.zl2cdedil7jkg3x1bmd6kix15
+docker@vm01:~$ docker exec -ti 62e7a53027a5 bash                                                                                                                                                                   
+ 
+root@62e7a53027a5:/# cat /run/secrets/everton
+everton           everton-arquivos  
+root@62e7a53027a5:/# cat /run/secrets/everton
+Everton Reis curso de docker linuxtipsroot@62e7a53027a5:/# 
+~~~
