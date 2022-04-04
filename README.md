@@ -1559,5 +1559,150 @@ root@vm01:~# curl localhost:8088
 Everton Reis
 ################################
 ~~~
+### Secret
+.....
 
-teste
+.....
+
+### Docker compose
+
+~~~
+$ mkdir compose
+docker@vm01:~$ cd compose/
+
+root@vm01:/home/docker/compose# vi compose.yml 
+version: "3.7"
+services:
+  web:
+    image: nginx
+    deploy:
+      replicas: 5
+      resouces:
+        limits:
+          cpus: "0.1"
+          memory: 50M
+      restart_policy:
+        condition: on-failure
+    ports:
+      - "8080:80"
+    networks:
+      - webserver
+networks:
+  webserver:
+~~~
+~~~
+root@vm01:/home/docker/compose# docker stack deploy -c compose.yml giropops                                                                                                                  
+Creating network giropops_webserver
+Creating service giropops_web
+~~~
+
+~~~
+root@vm01:/home/docker/compose# docker ps                                                                                                                                                    
+CONTAINER ID        IMAGE               COMMAND                  CREATED              STATUS              PORTS               NAMES
+92407da4b96d        nginx:latest        "/docker-entrypoint.…"   About a minute ago   Up About a minute   80/tcp              giropops_web.2.lpqurvgocs0od45xwul2lw17t
+cfe8933ce3a7        nginx:latest        "/docker-entrypoint.…"   About a minute ago   Up About a minute   80/tcp              giropops_web.4.oqokqradp2zexovji0yz4d2ko
+~~~
+~~~
+root@vm01:/home/docker/compose# docker network ls                                        
+NETWORK ID          NAME                 DRIVER              SCOPE
+726f4296a529        bridge               bridge              local
+1859e2ad7d95        docker_gwbridge      bridge              local
+ul7ebtcmluvm        giropops_webserver   overlay             swarm
+596ac355cb38        host                 host                local
+xty8rqljztvw        ingress              overlay             swarm
+8725d3c45641        none                 null                local
+~~~
+~~~
+root@vm01:/home/docker/compose# docker service ls                                        
+ID                  NAME                MODE                REPLICAS            IMAGE               PORTS
+ikgeq0kvyc4g        giropops_web        replicated          5/5                 nginx:latest        *:8080->80/tcp
+~~~
+~~~
+root@vm01:/home/docker/compose# docker stack ls                                         
+NAME                SERVICES            ORCHESTRATOR
+giropops            1                   Swarm
+~~~
+~~~
+root@vm01:/home/docker/compose# docker stack ps giropops                                  
+ID                  NAME                IMAGE               NODE                DESIRED STATE       CURRENT STATE           ERROR               PORTS
+ypm61edikp0j        giropops_web.1      nginx:latest        vm02                Running             Running 4 minutes ago                       
+lpqurvgocs0o        giropops_web.2      nginx:latest        vm01                Running             Running 4 minutes ago                       
+igw0ck92yqb5        giropops_web.3      nginx:latest        vm03                Running             Running 4 minutes ago                       
+oqokqradp2ze        giropops_web.4      nginx:latest        vm01                Running             Running 4 minutes ago                       
+lfkfn7qwu0vm        giropops_web.5      nginx:latest        vm03                Running             Running 4 minutes ago                       
+~~~
+~~~
+root@vm01:/home/docker/compose# docker stack rm giropops                       
+Removing service giropops_web
+Removing network giropops_webserver
+~~~
+
+### Compose 02 - wordpress / mysql
+~~~
+version: '3'
+services:
+  db:
+    image: mysql:5.7
+    volumes:
+    - db_data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: somewordpress
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
+
+  wordpress:
+    depends_on:
+    - db
+    image: wordpress:latest
+    ports:
+    - "8000:80"
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+volumes:
+  db_data:
+~~~
+~~~
+$ docker stack deploy -c compose2.yml wp     
+            
+Creating network wp_default
+Creating service wp_db
+Creating service wp_wordpress
+~~~
+~~~
+docker@vm01:~/compose$ docker stack ls                                         
+NAME                SERVICES            ORCHESTRATOR
+wp                  2                   Swarm
+~~~
+~~~
+$ docker ps
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS                 NAMES
+f079958b2de1        mysql:5.7           "docker-entrypoint.s…"   10 minutes ago      Up 10 minutes       3306/tcp, 33060/tcp   wp_db.1.mqni8o1qhraiiz9ryz2omwowo
+~~~
+~~~
+$ docker stack ls                                                    
+NAME                SERVICES            ORCHESTRATOR
+wp                  2                   Swarm
+~~~
+~~~
+$ docker service ls                                                 
+ID                  NAME                MODE                REPLICAS            IMAGE               PORTS
+4qwwx1kuai8b        wp_db               replicated          1/1                 mysql:5.7           
+mwiwm6rhv2rg        wp_wordpress        replicated          1/1                 wordpress:latest    *:8000->80/tcp
+~~~
+~~~
+$ docker container ps                                               
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS                 NAMES
+f079958b2de1        mysql:5.7           "docker-entrypoint.s…"   15 minutes ago      Up 15 minutes       3306/tcp, 33060/tcp   wp_db.1.mqni8o1qhraiiz9ryz2omwowo
+~~~
+~~~
+$ docker stack ps wp                                                                                                                                                    
+ID                  NAME                IMAGE               NODE                DESIRED STATE       CURRENT STATE             ERROR                              PORTS
+xyqoxuon5mg3        wp_wordpress.1      wordpress:latest    vm02                Running             Running 17 minutes ago                                       
+mqni8o1qhrai        wp_db.1             mysql:5.7           vm01                Running             Running 17 minutes ago                                       
+zbao7ts54d2x        wp_wordpress.1      wordpress:latest    vm02                Shutdown            Rejected 17 minutes ago   "No such image: wordpress:late…"   
+oz3thj954ze5        wp_db.1             mysql:5.7           vm03                Shutdown            Rejected 17 minutes ago   "No such image: mysql:5.7@sha2…"   
+~~~
+
