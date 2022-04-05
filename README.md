@@ -1706,3 +1706,87 @@ zbao7ts54d2x        wp_wordpress.1      wordpress:latest    vm02                
 oz3thj954ze5        wp_db.1             mysql:5.7           vm03                Shutdown            Rejected 17 minutes ago   "No such image: mysql:5.7@sha2…"   
 ~~~
 
+### Compose 03 nginx / Visializer
+~~~
+version: "3.7"
+services:
+  web:
+    image: nginx
+    deploy:
+      placement:
+        constraints:
+         - node.labels.dc == UK
+      replicas: 5
+      resources:
+        limits:
+          cpus: "0.1"
+          memory: 50M
+      restart_policy:
+        condition: on-failure
+    ports:
+      - "8080:80"
+    networks:
+      - webserver
+  visualizer:
+    image: dockersamples/visualizer:stable
+    ports:
+      - "8888:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    deploy:
+      placement:
+        constraints: [ node.role == manager ]
+
+networks:
+  webserver:
+
+~~~
+~~~
+$ docker stack deploy -c compose3.yml Visu                
+Creating network Visu_default
+Creating network Visu_webserver
+Creating service Visu_visualizer
+Creating service Visu_web
+
+~~~
+
+~~~
+ docker stack ls                                                                                                                                                               
+NAME                SERVICES            ORCHESTRATOR
+Visu                2                   Swarm
+
+~~~
+~~~
+$ docker stack ps Visu                                                                                                                                                          
+ID                  NAME                IMAGE                             NODE                DESIRED STATE       CURRENT STATE            ERROR                              PORTS
+lnx9ut8inyo6        Visu_web.1          nginx:latest                                          Running             Pending 16 seconds ago   "no suitable node (scheduling …"   
+1lz5ck2ok8gc        Visu_visualizer.1   dockersamples/visualizer:stable   vm02                Running             Running 18 seconds ago                                      
+bar64r0jqz0a        Visu_web.2          nginx:latest                                          Running             Pending 16 seconds ago   "no suitable node (scheduling …"   
+q3udc4yjzyke        Visu_web.3          nginx:latest                                          Running             Pending 16 seconds ago   "no suitable node (scheduling …"   
+b87vsr2bmaty        Visu_web.4          nginx:latest                                          Running             Pending 16 seconds ago   "no suitable node (scheduling …"   
+wgo1m8wf9js1        Visu_web.5          nginx:latest                                          Running             Pending 16 seconds ago   "no suitable node (scheduling …"   
+~~~
+~~~
+$ docker node update --label-add dc=UK vm01
+vm01
+~~~
+~~~
+$ docker stack ps Visu                                     
+ID                  NAME                IMAGE                             NODE                DESIRED STATE       CURRENT STATE            ERROR               PORTS
+lnx9ut8inyo6        Visu_web.1          nginx:latest                      vm01                Running             Running 25 seconds ago                       
+1lz5ck2ok8gc        Visu_visualizer.1   dockersamples/visualizer:stable   vm02                Running             Running 2 minutes ago                        
+bar64r0jqz0a        Visu_web.2          nginx:latest                      vm01                Running             Running 25 seconds ago                       
+q3udc4yjzyke        Visu_web.3          nginx:latest                      vm01                Running             Running 25 seconds ago                       
+b87vsr2bmaty        Visu_web.4          nginx:latest                      vm01                Running             Running 26 seconds ago                       
+wgo1m8wf9js1        Visu_web.5          nginx:latest                      vm01                Running             Running 26 seconds ago  
+~~~
+~~~                     
+docker@vm01:~$ docker ps                                               
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS               NAMES
+7d39c08aeb56        nginx:latest        "/docker-entrypoint.…"   3 minutes ago       Up 3 minutes        80/tcp              Visu_web.1.lnx9ut8inyo660eo2a2c5gill
+c3ddd76f0ac5        nginx:latest        "/docker-entrypoint.…"   3 minutes ago       Up 3 minutes        80/tcp              Visu_web.4.b87vsr2bmatylkm64g1wd7g5z
+986bd778d399        nginx:latest        "/docker-entrypoint.…"   3 minutes ago       Up 3 minutes        80/tcp              Visu_web.5.wgo1m8wf9js1zk2wne8i8pxn8
+f74268e3c3dc        nginx:latest        "/docker-entrypoint.…"   3 minutes ago       Up 3 minutes        80/tcp              Visu_web.3.q3udc4yjzyke1pk7jp3sz2l9o
+17759daf6ab8        nginx:latest        "/docker-entrypoint.…"   3 minutes ago       Up 3 minutes        80/tcp              Visu_web.2.bar64r0jqz0arq0phpdgfijtq
+
+~~~
