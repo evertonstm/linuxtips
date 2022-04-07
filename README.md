@@ -1792,31 +1792,32 @@ f74268e3c3dc        nginx:latest        "/docker-entrypoint.…"   3 minutes ago
 ~~~
 #### Compose 04 Redis, Worker, Node, db, visualizer
 ~~~
-version: '3.7'
-
+version: "3"
 services:
+
   redis:
     image: redis:alpine
-    ports:
-      - "6379"
     networks:
       - frontend
     deploy:
-      replicas: 2
+      replicas: 1
       update_config:
         parallelism: 2
         delay: 10s
       restart_policy:
         condition: on-failure
   db:
-    image: portgres:9.4
+    image: postgres:9.4
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
     volumes:
       - db-data:/var/lib/postgresql/data
     networks:
       - backend
     deploy:
       placement:
-        constraints: [ node.role == manager ]
+        constraints: [node.role == manager]
   vote:
     image: dockersamples/examplevotingapp_vote:before
     ports:
@@ -1832,7 +1833,7 @@ services:
       restart_policy:
         condition: on-failure
   result:
-    image: dockersamples/examplevotingapp_result:defore
+    image: dockersamples/examplevotingapp_result:before
     ports:
       - 5001:80
     networks:
@@ -1846,22 +1847,27 @@ services:
         delay: 10s
       restart_policy:
         condition: on-failure
+
   worker:
     image: dockersamples/examplevotingapp_worker
     networks:
       - frontend
       - backend
+    depends_on:
+      - db
+      - redis
     deploy:
       mode: replicated
       replicas: 1
-      labels: [ APP=VOTING ]
+      labels: [APP=VOTING]
       restart_policy:
         condition: on-failure
         delay: 10s
         max_attempts: 3
         window: 120s
       placement:
-        constraints: [ node.role == manager ]
+        constraints: [node.role == manager]
+
   visualizer:
     image: dockersamples/visualizer:stable
     ports:
@@ -1871,11 +1877,35 @@ services:
       - "/var/run/docker.sock:/var/run/docker.sock"
     deploy:
       placement:
-        constraints: [ node.role==manager ]
+        constraints: [node.role == manager]
+
 networks:
   frontend:
   backend:
+
 volumes:
   db-data:
+~~~
+~~~
+$ docker stack deploy -c compose4.yml vote                          
+Creating network vote_frontend
+Creating network vote_default
+Creating network vote_backend
+Creating service vote_vote
+Creating service vote_result
+Creating service vote_worker
+Creating service vote_visualizer
+Creating service vote_redis
+Creating service vote_db
+~~~
+~~~
+# docker service ls            
+ID                  NAME                MODE                REPLICAS            IMAGE                                          PORTS
+kp7luy72i6hr        VOTE_db             replicated          1/1                 postgres:9.4                                   
+di12px8kirbe        VOTE_redis          replicated          1/1                 redis:alpine                                   
+3qx6dc7uwkss        VOTE_result         replicated          1/1                 dockersamples/examplevotingapp_result:before   *:5001->80/tcp
+nj3hhfjdeaxg        VOTE_visualizer     replicated          1/1                 dockersamples/visualizer:stable                *:8080->8080/tcp
+hw4vak8xczng        VOTE_vote           replicated          2/2                 dockersamples/examplevotingapp_vote:before     *:5000->80/tcp
+1ql660il4d0e        VOTE_worker         replicated          1/1                 dockersamples/examplevotingapp_worker:latest   
 
 ~~~
