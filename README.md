@@ -1559,7 +1559,196 @@ root@vm01:~# curl localhost :8088
 Everton Reis
 ################################
 ~~~
+### Secret
+.....
 
+.....
+
+### Docker compose
+
+~~~
+$ mkdir compose
+docker@vm01:~$ cd compose/
+
+root@vm01:/home/docker/compose# vi compose.yml 
+version: "3.7"
+services:
+  web:
+    image: nginx
+    deploy:
+      replicas: 5
+      resouces:
+        limits:
+          cpus: "0.1"
+          memory: 50M
+      restart_policy:
+        condition: on-failure
+    ports:
+      - "8080:80"
+    networks:
+      - webserver
+networks:
+  webserver:
+~~~
+~~~
+root@vm01:/home/docker/compose# docker stack deploy -c compose.yml giropops                                                                                                                  
+Creating network giropops_webserver
+Creating service giropops_web
+~~~
+
+~~~
+root@vm01:/home/docker/compose# docker ps                                                                                                                                                    
+CONTAINER ID        IMAGE               COMMAND                  CREATED              STATUS              PORTS               NAMES
+92407da4b96d        nginx:latest        "/docker-entrypoint.…"   About a minute ago   Up About a minute   80/tcp              giropops_web.2.lpqurvgocs0od45xwul2lw17t
+cfe8933ce3a7        nginx:latest        "/docker-entrypoint.…"   About a minute ago   Up About a minute   80/tcp              giropops_web.4.oqokqradp2zexovji0yz4d2ko
+~~~
+~~~
+root@vm01:/home/docker/compose# docker network ls                                        
+NETWORK ID          NAME                 DRIVER              SCOPE
+726f4296a529        bridge               bridge              local
+1859e2ad7d95        docker_gwbridge      bridge              local
+ul7ebtcmluvm        giropops_webserver   overlay             swarm
+596ac355cb38        host                 host                local
+xty8rqljztvw        ingress              overlay             swarm
+8725d3c45641        none                 null                local
+~~~
+~~~
+root@vm01:/home/docker/compose# docker service ls                                        
+ID                  NAME                MODE                REPLICAS            IMAGE               PORTS
+ikgeq0kvyc4g        giropops_web        replicated          5/5                 nginx:latest        *:8080->80/tcp
+~~~
+~~~
+root@vm01:/home/docker/compose# docker stack ls                                         
+NAME                SERVICES            ORCHESTRATOR
+giropops            1                   Swarm
+~~~
+~~~
+root@vm01:/home/docker/compose# docker stack ps giropops                                  
+ID                  NAME                IMAGE               NODE                DESIRED STATE       CURRENT STATE           ERROR               PORTS
+ypm61edikp0j        giropops_web.1      nginx:latest        vm02                Running             Running 4 minutes ago                       
+lpqurvgocs0o        giropops_web.2      nginx:latest        vm01                Running             Running 4 minutes ago                       
+igw0ck92yqb5        giropops_web.3      nginx:latest        vm03                Running             Running 4 minutes ago                       
+oqokqradp2ze        giropops_web.4      nginx:latest        vm01                Running             Running 4 minutes ago                       
+lfkfn7qwu0vm        giropops_web.5      nginx:latest        vm03                Running             Running 4 minutes ago                       
+~~~
+~~~
+root@vm01:/home/docker/compose# docker stack rm giropops                       
+Removing service giropops_web
+Removing network giropops_webserver
+~~~
+
+### Compose 02 - wordpress / mysql
+~~~
+version: '3'
+services:
+  db:
+    image: mysql:5.7
+    volumes:
+    - db_data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: somewordpress
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
+
+  wordpress:
+    depends_on:
+    - db
+    image: wordpress:latest
+    ports:
+    - "8000:80"
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+volumes:
+  db_data:
+~~~
+~~~
+$ docker stack deploy -c compose2.yml wp     
+            
+Creating network wp_default
+Creating service wp_db
+Creating service wp_wordpress
+~~~
+~~~
+docker@vm01:~/compose$ docker stack ls                                         
+NAME                SERVICES            ORCHESTRATOR
+wp                  2                   Swarm
+~~~
+~~~
+$ docker ps
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS                 NAMES
+f079958b2de1        mysql:5.7           "docker-entrypoint.s…"   10 minutes ago      Up 10 minutes       3306/tcp, 33060/tcp   wp_db.1.mqni8o1qhraiiz9ryz2omwowo
+~~~
+~~~
+$ docker stack ls                                                    
+NAME                SERVICES            ORCHESTRATOR
+wp                  2                   Swarm
+~~~
+~~~
+$ docker service ls                                                 
+ID                  NAME                MODE                REPLICAS            IMAGE               PORTS
+4qwwx1kuai8b        wp_db               replicated          1/1                 mysql:5.7           
+mwiwm6rhv2rg        wp_wordpress        replicated          1/1                 wordpress:latest    *:8000->80/tcp
+~~~
+~~~
+$ docker container ps                                               
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS                 NAMES
+f079958b2de1        mysql:5.7           "docker-entrypoint.s…"   15 minutes ago      Up 15 minutes       3306/tcp, 33060/tcp   wp_db.1.mqni8o1qhraiiz9ryz2omwowo
+~~~
+~~~
+$ docker stack ps wp                                                                                                                                                    
+ID                  NAME                IMAGE               NODE                DESIRED STATE       CURRENT STATE             ERROR                              PORTS
+xyqoxuon5mg3        wp_wordpress.1      wordpress:latest    vm02                Running             Running 17 minutes ago                                       
+mqni8o1qhrai        wp_db.1             mysql:5.7           vm01                Running             Running 17 minutes ago                                       
+zbao7ts54d2x        wp_wordpress.1      wordpress:latest    vm02                Shutdown            Rejected 17 minutes ago   "No such image: wordpress:late…"   
+oz3thj954ze5        wp_db.1             mysql:5.7           vm03                Shutdown            Rejected 17 minutes ago   "No such image: mysql:5.7@sha2…"   
+~~~
+
+### Compose 03 nginx / Visializer
+~~~
+version: "3.7"
+services:
+  web:
+    image: nginx
+    deploy:
+      placement:
+        constraints:
+         - node.labels.dc == UK
+      replicas: 5
+      resources:
+        limits:
+          cpus: "0.1"
+          memory: 50M
+      restart_policy:
+        condition: on-failure
+    ports:
+      - "8080:80"
+    networks:
+      - webserver
+  visualizer:
+    image: dockersamples/visualizer:stable
+    ports:
+      - "8888:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    deploy:
+      placement:
+        constraints: [ node.role == manager ]
+
+networks:
+  webserver:
+
+~~~
+~~~
+$ docker stack deploy -c compose3.yml Visu                
+Creating network Visu_default
+Creating network Visu_webserver
+Creating service Visu_visualizer
+Creating service Visu_web
+
+<<<<<<< HEAD
 ### Docker Swarm Service e Network
 ~~~
 $ docker service create --name WebServer --replicas 3 -p 8080:80 --mount type=volume,src=giropops,dst=/usr/share/nginx/html --hostname sua_mae --limit-memory 64M --env everton=lindo --dns 8.8.8.8 nginx
@@ -1755,4 +1944,166 @@ root@62e7a53027a5:/# cat /run/secrets/everton
 everton           everton-arquivos  
 root@62e7a53027a5:/# cat /run/secrets/everton
 Everton Reis curso de docker linuxtipsroot@62e7a53027a5:/# 
+=======
+~~~
+
+~~~
+ docker stack ls                                                                                                                                                               
+NAME                SERVICES            ORCHESTRATOR
+Visu                2                   Swarm
+
+~~~
+~~~
+$ docker stack ps Visu                                                                                                                                                          
+ID                  NAME                IMAGE                             NODE                DESIRED STATE       CURRENT STATE            ERROR                              PORTS
+lnx9ut8inyo6        Visu_web.1          nginx:latest                                          Running             Pending 16 seconds ago   "no suitable node (scheduling …"   
+1lz5ck2ok8gc        Visu_visualizer.1   dockersamples/visualizer:stable   vm02                Running             Running 18 seconds ago                                      
+bar64r0jqz0a        Visu_web.2          nginx:latest                                          Running             Pending 16 seconds ago   "no suitable node (scheduling …"   
+q3udc4yjzyke        Visu_web.3          nginx:latest                                          Running             Pending 16 seconds ago   "no suitable node (scheduling …"   
+b87vsr2bmaty        Visu_web.4          nginx:latest                                          Running             Pending 16 seconds ago   "no suitable node (scheduling …"   
+wgo1m8wf9js1        Visu_web.5          nginx:latest                                          Running             Pending 16 seconds ago   "no suitable node (scheduling …"   
+~~~
+~~~
+$ docker node update --label-add dc=UK vm01
+vm01
+~~~
+~~~
+$ docker stack ps Visu                                     
+ID                  NAME                IMAGE                             NODE                DESIRED STATE       CURRENT STATE            ERROR               PORTS
+lnx9ut8inyo6        Visu_web.1          nginx:latest                      vm01                Running             Running 25 seconds ago                       
+1lz5ck2ok8gc        Visu_visualizer.1   dockersamples/visualizer:stable   vm02                Running             Running 2 minutes ago                        
+bar64r0jqz0a        Visu_web.2          nginx:latest                      vm01                Running             Running 25 seconds ago                       
+q3udc4yjzyke        Visu_web.3          nginx:latest                      vm01                Running             Running 25 seconds ago                       
+b87vsr2bmaty        Visu_web.4          nginx:latest                      vm01                Running             Running 26 seconds ago                       
+wgo1m8wf9js1        Visu_web.5          nginx:latest                      vm01                Running             Running 26 seconds ago  
+~~~
+~~~                     
+docker@vm01:~$ docker ps                                               
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS               NAMES
+7d39c08aeb56        nginx:latest        "/docker-entrypoint.…"   3 minutes ago       Up 3 minutes        80/tcp              Visu_web.1.lnx9ut8inyo660eo2a2c5gill
+c3ddd76f0ac5        nginx:latest        "/docker-entrypoint.…"   3 minutes ago       Up 3 minutes        80/tcp              Visu_web.4.b87vsr2bmatylkm64g1wd7g5z
+986bd778d399        nginx:latest        "/docker-entrypoint.…"   3 minutes ago       Up 3 minutes        80/tcp              Visu_web.5.wgo1m8wf9js1zk2wne8i8pxn8
+f74268e3c3dc        nginx:latest        "/docker-entrypoint.…"   3 minutes ago       Up 3 minutes        80/tcp              Visu_web.3.q3udc4yjzyke1pk7jp3sz2l9o
+17759daf6ab8        nginx:latest        "/docker-entrypoint.…"   3 minutes ago       Up 3 minutes        80/tcp              Visu_web.2.bar64r0jqz0arq0phpdgfijtq
+
+~~~
+#### Compose 04 Redis, Worker, Node, db, visualizer
+~~~
+version: "3"
+services:
+
+  redis:
+    image: redis:alpine
+    networks:
+      - frontend
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 2
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+  db:
+    image: postgres:9.4
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - backend
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+  vote:
+    image: dockersamples/examplevotingapp_vote:before
+    ports:
+      - 5000:80
+    networks:
+      - frontend
+    depends_on:
+      - redis
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 2
+      restart_policy:
+        condition: on-failure
+  result:
+    image: dockersamples/examplevotingapp_result:before
+    ports:
+      - 5001:80
+    networks:
+      - backend
+    depends_on:
+      - db
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 2
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+
+  worker:
+    image: dockersamples/examplevotingapp_worker
+    networks:
+      - frontend
+      - backend
+    depends_on:
+      - db
+      - redis
+    deploy:
+      mode: replicated
+      replicas: 1
+      labels: [APP=VOTING]
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 3
+        window: 120s
+      placement:
+        constraints: [node.role == manager]
+
+  visualizer:
+    image: dockersamples/visualizer:stable
+    ports:
+      - "8080:8080"
+    stop_grace_period: 1m30s
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+
+networks:
+  frontend:
+  backend:
+
+volumes:
+  db-data:
+~~~
+~~~
+$ docker stack deploy -c compose4.yml vote                          
+Creating network vote_frontend
+Creating network vote_default
+Creating network vote_backend
+Creating service vote_vote
+Creating service vote_result
+Creating service vote_worker
+Creating service vote_visualizer
+Creating service vote_redis
+Creating service vote_db
+~~~
+~~~
+# docker service ls            
+ID                  NAME                MODE                REPLICAS            IMAGE                                          PORTS
+kp7luy72i6hr        VOTE_db             replicated          1/1                 postgres:9.4                                   
+di12px8kirbe        VOTE_redis          replicated          1/1                 redis:alpine                                   
+3qx6dc7uwkss        VOTE_result         replicated          1/1                 dockersamples/examplevotingapp_result:before   *:5001->80/tcp
+nj3hhfjdeaxg        VOTE_visualizer     replicated          1/1                 dockersamples/visualizer:stable                *:8080->8080/tcp
+hw4vak8xczng        VOTE_vote           replicated          2/2                 dockersamples/examplevotingapp_vote:before     *:5000->80/tcp
+1ql660il4d0e        VOTE_worker         replicated          1/1                 dockersamples/examplevotingapp_worker:latest   
+
+>>>>>>> ad93add9c76c467124b2c3167c4707fed1f2e4cb
 ~~~
